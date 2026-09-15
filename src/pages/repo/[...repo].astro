@@ -1,0 +1,229 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import StarGraph from '../../components/StarGraph.astro';
+import { SITE_METADATA } from '../../config';
+import { INDUSTRY_LABEL, AI_CATEGORY_LABEL } from '../../data/taxonomy';
+import { breadcrumbs, repoPage, softwareSourceCode } from '../../lib/schema';
+import { productSlug, repoPath, repoSlug } from '../../lib/routes';
+import { hasEditorialNote, repoDescription, repoTitle } from '../../lib/meta';
+import { productPages } from '../../lib/alternatives';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('repos');
+
+	// A repo can appear in many editions; the page shows its most recent
+	// appearance and links back to every edition it ran in. Grouping is by the
+	// canonical (lowercased) slug, so two editions spelling the same repo with
+	// different casing collapse into one page instead of colliding on the same
+	// route.
+	const byRepo = new Map<string, typeof entries>();
+	for (const entry of entries) {
+		const key = repoSlug(entry.data.repo);
+		const list = byRepo.get(key) ?? [];
+		list.push(entry);
+		byRepo.set(key, list);
+	}
+
+	// Which products have their own page, so the "alternative to" links can
+	// point at a page rather than an anchor on the index when one exists.
+	const withPage = new Set(productPages(entries).map((p) => p.product));
+
+	// One card per repo for the beat sidebar, newest appearance first.
+	const latestPerRepo = [...byRepo.values()].map(
+		(list) => [...list].sort((a, b) => b.data.date.localeCompare(a.data.date))[0]
+	);
+
+	return [...byRepo.entries()].map(([slug, appearances]) => {
+		const sorted = [...appearances].sort((a, b) => b.data.date.localeCompare(a.data.date));
+		return {
+			params: { repo: slug },
+			props: {
+				// The URL is the lowercased slug; the display name keeps the
+				// casing the most recent edition used.
+				repo: sorted[0].data.repo,
+				latest: sorted[0],
+				appearances: sorted.map((a) => a.data.date),
+				withPage: [...withPage],
+				// Other projects on the same beat. Gives every repo page an
+				// outbound link to its siblings instead of dead-ending.
+				siblings: latestPerRepo
+					.filter(
+						(e) =>
+							e.data.industry === sorted[0].data.industry &&
+							e.data.repo.toLowerCase() !== slug
+					)
+					.sort((a, b) => (b.data.interest_score ?? 0) - (a.data.interest_score ?? 0))
+					.slice(0, 6)
+					.map((e) => ({
+						repo: e.data.repo,
+						stars: e.data.stars,
+						language: e.data.language ?? null,
+					})),
+			},
+		};
+	});
+}
+
+const { repo, latest, appearances, withPage, siblings } = Astro.props as {
+	repo: string;
+	latest: any;
+	appearances: string[];
+	withPage: string[];
+	siblings: { repo: string; stars?: number; language: string | null }[];
+};
+const productHasPage = new Set(withPage);
+const d = latest.data;
+
+const readmeId = repo.replace('/', '--').toLowerCase();
+const readmeEntry = d.has_readme ? await getEntry('readmes', readmeId) : undefined;
+const Readme = readmeEntry ? (await render(readmeEntry)).Content : null;
+
+// Star history is written alongside the README by the ingest run. Absent until
+// a tokened backfill or a second nightly snapshot exists.
+const historyFiles = import.meta.glob<{ default: { date: string; stars: number }[] }>(
+	'/src/content/readmes/*.stars.json'
+);
+const historyKey = `/src/content/readmes/${readmeId}.stars.json`;
+const points = historyFiles[historyKey] ? (await historyFiles[historyKey]()).default : [];
+
+const industryLabel = d.industry ? INDUSTRY_LABEL[d.industry as keyof typeof INDUSTRY_LABEL] ?? d.industry : null;
+const aiLabel = d.ai_category ? AI_CATEGORY_LABEL[d.ai_category as keyof typeof AI_CATEGORY_LABEL] ?? d.ai_category : null;
+
+const fmt = (n?: number) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
+const headline = typeof d.stars_delta_7d === 'number'
+	? `${d.stars_delta_7d >= 0 ? '+' : ''}${fmt(d.stars_delta_7d)} stars this week`
+	: typeof d.stars_per_day === 'number'
+		? `${d.stars_per_day.toFixed(1)} stars/day since launch`
+		: `${fmt(d.stars)} stars`;
+
+const pageTitle = repoTitle({ repo, ...d });
+const pageDescription = repoDescription({ repo, ...d });
+
+// The blurb section is the editorial claim; the placeholder ingest writes in
+// its place is not one, so the section is withheld until the editorial pass
+// has actually run rather than printing "Editorial note pending" as a heading.
+const editorialNote = hasEditorialNote(d.why_it_matters) ? d.why_it_matters : null;
+
+const facts = {
+	repo,
+	url: d.url,
+	description: editorialNote ?? undefined,
+	language: d.language,
+	stars: d.stars,
+	repoCreatedAt: d.repo_created_at,
+	editionDate: d.date,
+};
+
+const jsonLd = [
+	repoPage(facts, { name: pageTitle, description: pageDescription }),
+	softwareSourceCode(facts),
+	breadcrumbs([
+		...(industryLabel ? [{ name: industryLabel, path: `/industry/${d.industry}/` }] : []),
+		{ name: repo, path: repoPath(repo) },
+	]),
+];
+---
+
+<Layout
+	title={pageTitle}
+	description={pageDescription}
+	type="article"
+	publishedTime={d.date}
+	jsonLd={jsonLd}
+>
+	<main class="page-container">
+		<article class="newspaper-sheet repo-sheet">
+			<header class="repo-header">
+				<div class="repo-eyebrow">
+					<a class="masthead-eyebrow-link" href="/">&larr; {SITE_METADATA.name}</a>
+					{industryLabel && (
+						<><span class="story-source-sep">&middot;</span>
+						<a class="masthead-eyebrow-link" href={`/industry/${d.industry}/`}>{industryLabel}</a></>
+					)}
+					{aiLabel && <><span class="story-source-sep">&middot;</span><span>{aiLabel}</span></>}
+				</div>
+
+				<h1 class="repo-title">{repo}</h1>
+				<p class="repo-headline-metric">{headline}</p>
+
+				{d.alternative_to.length > 0 && (
+					<p class="repo-alternative">
+						Open source alternative to {d.alternative_to.map((alt: string, i: number) => (
+							<>{i > 0 && ', '}<a href={productHasPage.has(alt)
+								? `/alternatives/${productSlug(alt)}/`
+								: `/alternatives/#${productSlug(alt)}`}>{alt}</a></>
+						))}
+					</p>
+				)}
+			</header>
+
+			<dl class="repo-stats">
+				<div><dt>Stars</dt><dd>{fmt(d.stars)}</dd></div>
+				<div><dt>Forks</dt><dd>{fmt(d.forks)}</dd></div>
+				<div><dt>Fork ratio</dt><dd>{typeof d.fork_ratio === 'number' ? `${(d.fork_ratio * 100).toFixed(1)}%` : '—'}</dd></div>
+				<div><dt>Language</dt><dd>{d.language ?? '—'}</dd></div>
+				<div><dt>Created</dt><dd>{d.repo_created_at ? d.repo_created_at.slice(0, 10) : '—'}</dd></div>
+				{typeof d.hn_points === 'number' && <div><dt>HN points</dt><dd>{fmt(d.hn_points)}</dd></div>}
+			</dl>
+
+			<StarGraph points={points} repo={repo} />
+
+			{editorialNote && (
+				<section class="repo-why">
+					<h2 class="repo-section-title">Why it matters</h2>
+					<p>{editorialNote}</p>
+				</section>
+			)}
+
+			<p class="repo-links">
+				<a href={d.url} target="_blank" rel="noopener noreferrer">View on GitHub &rsaquo;</a>
+				{d.comments && (<><span class="story-source-sep">&middot;</span>
+					<a href={d.comments} target="_blank" rel="noopener noreferrer">Hacker News discussion &rsaquo;</a></>)}
+			</p>
+
+			<section class="repo-appearances">
+				<h2 class="repo-section-title">Editions</h2>
+				<ul>{appearances.map((day: string) => <li><a href={`/${day}/`}>{day}</a></li>)}</ul>
+			</section>
+
+			{siblings.length > 0 && industryLabel && (
+				<section class="repo-appearances">
+					<h2 class="repo-section-title">Also on the {industryLabel} beat</h2>
+					<ul class="repo-list">
+						{siblings.map((sib) => (
+							<li>
+								<a class="repo-list-name" href={repoPath(sib.repo)}>{sib.repo}</a>
+								<span class="repo-list-meta">
+									{[
+										typeof sib.stars === 'number' ? `${fmt(sib.stars)} stars` : null,
+										sib.language,
+									].filter(Boolean).join(' · ')}
+								</span>
+							</li>
+						))}
+					</ul>
+					<p class="repo-readme-source">
+						<a href={`/industry/${d.industry}/`}>All {industryLabel} projects &rsaquo;</a>
+					</p>
+				</section>
+			)}
+
+			{Readme && (
+				<section class="repo-readme">
+					<h2 class="repo-section-title">README</h2>
+					<div class="repo-readme-body"><Readme /></div>
+					{readmeEntry && (
+						<p class="repo-readme-source">
+							Fetched from <a href={readmeEntry.data.source_url} target="_blank" rel="noopener noreferrer">source</a>
+							{' '}on {readmeEntry.data.fetched_at.slice(0, 10)}.
+						</p>
+					)}
+				</section>
+			)}
+
+			<Footer />
+		</article>
+	</main>
+</Layout>

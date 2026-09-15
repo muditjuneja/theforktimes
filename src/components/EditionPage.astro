@@ -1,0 +1,404 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ThemeToggleButton from './ThemeToggleButton.astro';
+import Footer from './Footer.astro';
+import Subscribe from './Subscribe.astro';
+import StoryBody from './StoryBody.astro';
+import { SITE_METADATA } from '../config';
+import { INDUSTRY_LABEL } from '../data/taxonomy';
+import { breadcrumbs, collectionPage, organization, webSite } from '../lib/schema';
+import { repoPath } from '../lib/routes';
+import { editionDescription, editionTitle, hasEditorialNote } from '../lib/meta';
+
+const SOURCE_LABEL: Record<string, string> = {
+	github: 'GitHub',
+	hn: 'HN',
+	trending: 'Trending',
+};
+
+interface StoryProps {
+	slug: string;
+	repo: string;
+	title: string;
+	description?: string;
+	source: string;
+	url: string;
+	why_it_matters?: string;
+	authors: string[];
+	image?: string;
+	interest_score?: number;
+	comments?: string;
+	hn_id?: string;
+	section?: string;
+	stars?: number;
+	forks?: number;
+	stars_delta_7d?: number;
+	stars_per_day?: number;
+	language?: string;
+	hn_points?: number;
+	hn_comments?: number;
+	industry?: string;
+	alternative_to?: string[];
+}
+
+interface Props {
+	day: string;
+	stories: StoryProps[];
+	issue: number;
+	totalIssues: number;
+	prevDay: string | null;
+	nextDay: string | null;
+	allDays: { day: string; label: string }[];
+	isHomepage?: boolean;
+	/** True for the dated route when it is the edition / currently mirrors. */
+	isLatest?: boolean;
+}
+
+const { day, stories, issue, totalIssues, prevDay, nextDay, allDays, isHomepage = false, isLatest = false } = Astro.props;
+
+const images = import.meta.glob('/src/content/repos/**/*.{png,jpg,jpeg,svg,webp}', { eager: true });
+
+function resolveImage(story: StoryProps, day: string) {
+	if (!story.image) return null;
+	if (story.image.startsWith('/')) {
+		// Absolute paths are served from our own origin (public/).
+		return story.image;
+	}
+	const key = `/src/content/repos/${day}/${story.image}`;
+	const imageModule = images[key] as { default: { src: string } } | undefined;
+	return imageModule?.default?.src || null;
+}
+
+const label = new Date(`${day}T00:00:00`).toLocaleDateString('en-US', {
+	weekday: 'long',
+	year: 'numeric',
+	month: 'long',
+	day: 'numeric',
+});
+
+// The byline leads with the headline number. Star velocity is the figure the
+// paper is built on; it falls back to stars/day until a repo has two
+// snapshots a week apart, and to the raw count if even that is missing.
+function bylineFor(story: StoryProps) {
+	if (typeof story.stars_delta_7d === 'number') {
+		const sign = story.stars_delta_7d >= 0 ? '+' : '';
+		return `${sign}${story.stars_delta_7d.toLocaleString('en-US')} stars this week`;
+	}
+	if (typeof story.stars_per_day === 'number') {
+		return `${story.stars_per_day.toFixed(1)} stars/day`;
+	}
+	if (typeof story.stars === 'number') {
+		return `${story.stars.toLocaleString('en-US')} stars`;
+	}
+	return null;
+}
+
+function sourceLabelFor(story: StoryProps) {
+	return SOURCE_LABEL[story.source] ?? story.source.toUpperCase();
+}
+
+
+
+// Only beats actually present in this edition are offered, so a filter can
+// never empty the register by design.
+const presentIndustries = [...new Set(stories.map((s) => s.industry).filter(Boolean))]
+	.sort((a, b) => (INDUSTRY_LABEL[a as keyof typeof INDUSTRY_LABEL] ?? a!)
+		.localeCompare(INDUSTRY_LABEL[b as keyof typeof INDUSTRY_LABEL] ?? b!));
+
+const lead = stories[0];
+
+const pageTitle = isHomepage
+	? `${SITE_METADATA.name} | ${SITE_METADATA.tagline}`
+	: editionTitle(label, issue);
+
+// The front page keeps the site-level description - it is the page that ranks
+// for the masthead itself. Dated editions describe their own contents, so the
+// archive does not fill up with issues sharing one boilerplate snippet.
+const pageDescription = isHomepage
+	? SITE_METADATA.metaDescription
+	: editionDescription({
+			label,
+			issue,
+			count: stories.length,
+			leads: stories.slice(0, 3).map((s) => s.repo),
+			// Which metric ranked this edition; never present one as the other.
+			usesVelocity: stories.some((s) => typeof s.stars_delta_7d === 'number'),
+		});
+
+// The edition is a dated list of repos, so it is typed as a CollectionPage
+// wrapping an ItemList rather than as an Article - the editorial blurbs sit
+// inside the list items, they are not the page's body.
+// Matches the canonical below: while this edition is the one / mirrors, its
+// own identity for structured data purposes is also /, not its dated URL.
+const editionPath = isHomepage || isLatest ? '/' : `/${day}/`;
+const jsonLd = [
+	collectionPage({
+		path: editionPath,
+		name: pageTitle,
+		description: pageDescription,
+		datePublished: day,
+		itemListName: `Open source projects ranked for ${label}`,
+		items: stories.map((s) => ({ name: s.repo, path: repoPath(s.repo) })),
+	}),
+	...(isHomepage
+		? [webSite(), organization()]
+		: [
+				breadcrumbs([
+					{ name: 'Archive', path: '/archive/' },
+					{ name: label, path: `/${day}/` },
+				]),
+			]),
+];
+---
+
+<Layout
+	title={pageTitle}
+	description={pageDescription}
+	image={resolveImage(lead, day) || undefined}
+	type="article"
+	publishedTime={day}
+	jsonLd={jsonLd}
+	canonical={!isHomepage && isLatest ? '/' : undefined}
+>
+	<main class="page-container">
+		<article
+			id="newspaper-sheet"
+			class="newspaper-sheet"
+			data-day={day}
+			data-count={stories.length}
+			data-prev={prevDay}
+			data-next={nextDay}
+		>
+			<header class="masthead">
+				<div class="masthead-eyebrow">
+					<span class="masthead-eyebrow-left">
+						<a href="/archive/" class="masthead-archive-link">Archive</a>
+						<span class="masthead-eyebrow-sep">&middot;</span>
+						<a href="/alternatives/" class="masthead-eyebrow-link">Alternatives</a>
+					</span>
+
+					<span class="masthead-eyebrow-center-group">
+						<button class="masthead-nav-btn" id="prev-edition" aria-label="Previous edition" disabled={!prevDay}>
+							<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+						</button>
+						<span class="masthead-eyebrow-center">No. {issue} &middot; {label}</span>
+						<button class="masthead-nav-btn" id="next-edition" aria-label="Next edition" disabled={!nextDay}>
+							<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+						</button>
+					</span>
+
+					<span class="masthead-eyebrow-right">
+						<span id="masthead-story-count">{stories.length} entries</span>
+						<ThemeToggleButton />
+					</span>
+				</div>
+
+				<hr class="masthead-rule-thick" />
+
+				<h1 class="masthead-name">{SITE_METADATA.name}</h1>
+
+				<p class="masthead-tagline"><span>{SITE_METADATA.tagline}</span></p>
+
+				<!-- The beat rail. Only beats actually present in this edition are
+				     offered, so a filter never empties the register by design. -->
+				<div class="filter-bar">
+					<div class="filter-group" id="source-filter-container">
+						<span class="filter-label">Source</span>
+						<div class="filter-options">
+							<button class="filter-btn active" data-filter="all">All</button>
+							<button class="filter-btn" data-filter="github">GitHub</button>
+							<button class="filter-btn" data-filter="hn">HN</button>
+						</div>
+					</div>
+
+					<div class="filter-group" id="industry-filter-container">
+						<span class="filter-label">Beat</span>
+						<div class="filter-options">
+							<button class="filter-btn active" data-filter="all">All</button>
+							{presentIndustries.map((key) => (
+								<button class="filter-btn" data-filter={key}>
+									{INDUSTRY_LABEL[key as keyof typeof INDUSTRY_LABEL] ?? key}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div class="filter-group" id="interest-filter-container">
+						<span class="filter-label">Signal</span>
+						<div class="filter-options">
+							<button class="filter-btn active" data-filter="all">All</button>
+							<button class="filter-btn" data-filter="8">Recommended</button>
+							<button class="filter-btn" data-filter="9">Must-read</button>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			<section class="newspaper-columns" id="register">
+				{stories.map((story, index) => {
+					const image = resolveImage(story, day);
+					const metric = bylineFor(story);
+					return (
+						<article
+							class={index === 0 ? 'is-lead' : undefined}
+							data-source={story.source}
+							data-industry={story.industry}
+							data-interest={story.interest_score}
+						>
+							<div class="story-byline">
+								{metric && <span>{metric}</span>}
+								<span class="story-source-sep">&middot;</span>
+								<a class="story-source-link" href={story.url} target="_blank" rel="noopener noreferrer">
+									{sourceLabelFor(story)}
+								</a>
+								{story.comments && (
+									<>
+										<span class="story-source-sep">&middot;</span>
+										<a class="story-source-link" href={story.comments} target="_blank" rel="noopener noreferrer">Discuss</a>
+									</>
+								)}
+								{/* Coerced to a boolean: a bare `.length` of 0 is falsy but still renders
+								     as a literal "0" next to the byline. */}
+								{(hasEditorialNote(story.why_it_matters) || (story.alternative_to?.length ?? 0) > 0) && (
+									<span class="why-info" tabindex="0">
+										<svg class="why-info-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+										<span class="why-tooltip">
+											{hasEditorialNote(story.why_it_matters) && (
+												<><strong>Why it matters:</strong> {story.why_it_matters}</>
+											)}
+											{story.alternative_to && story.alternative_to.length > 0 && (
+												<>
+													{hasEditorialNote(story.why_it_matters) && <br />}
+													<strong>Substitute for:</strong> {story.alternative_to.join(', ')}
+												</>
+											)}
+										</span>
+									</span>
+								)}
+							</div>
+
+							<h2 class="story-headline">
+								<a href={repoPath(story.repo)}>{story.title}</a>
+							</h2>
+
+							{image && (
+								<div class="story-image-wrapper">
+									<img class="story-featured-image" src={image} alt={story.title} loading="lazy" />
+								</div>
+							)}
+
+							<div class="story-body">
+								<StoryBody
+									description={story.description}
+									stars={story.stars ?? 0}
+									forks={story.forks ?? 0}
+									stars_delta_7d={story.stars_delta_7d}
+									stars_per_day={story.stars_per_day}
+									language={story.language}
+									hn_points={story.hn_points}
+									hn_comments={story.hn_comments}
+								/>
+							</div>
+						</article>
+					);
+				})}
+			</section>
+
+			<p class="empty-state" id="no-stories-message" hidden>
+				<span class="empty-state-title">No entries match</span>
+				<span class="empty-state-desc">Clear a filter to see the rest of the register.</span>
+			</p>
+
+			<Subscribe pitch="That was one issue. The next lands Tuesday — the open source projects that actually moved, and why it matters." />
+
+			<Footer label={label} showDelayNote={true} />
+		</article>
+	</main>
+
+	<div id="image-modal" class="image-modal" aria-hidden="true">
+		<button id="image-modal-close" class="image-modal-close" aria-label="Close image">&times;</button>
+		<img id="image-modal-img" class="image-modal-img" src="" alt="" />
+	</div>
+</Layout>
+
+<script>
+	// ─── edition navigation ───────────────────────────────────
+	const sheet = document.getElementById('newspaper-sheet');
+	const go = (day: string | null) => { if (day) window.location.href = `/${day}/`; };
+	document.getElementById('prev-edition')?.addEventListener('click', () => go(sheet?.dataset.prev || null));
+	document.getElementById('next-edition')?.addEventListener('click', () => go(sheet?.dataset.next || null));
+
+	// ─── image modal ──────────────────────────────────────────
+	const modal = document.getElementById('image-modal') as HTMLElement | null;
+	const modalImg = document.getElementById('image-modal-img') as HTMLImageElement | null;
+
+	function setModal(open: boolean, src = '', alt = '') {
+		if (!modal || !modalImg) return;
+		if (open) { modalImg.src = src; modalImg.alt = alt; }
+		modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+		document.body.style.overflow = open ? 'hidden' : '';
+	}
+
+	document.querySelectorAll<HTMLImageElement>('.story-featured-image').forEach((img) => {
+		img.addEventListener('click', () => setModal(true, img.currentSrc || img.src, img.alt));
+	});
+	document.getElementById('image-modal-close')?.addEventListener('click', () => setModal(false));
+	modal?.addEventListener('click', (e) => { if (e.target === modal) setModal(false); });
+	document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setModal(false); });
+
+	// ─── the beat rail ────────────────────────────────────────
+	// Three independent filters, ANDed. Hidden entries are removed from the
+	// grid entirely rather than made invisible, so the two-column register
+	// closes up and the Roman numerals renumber from the CSS counter.
+	const GROUPS = ['source', 'industry', 'interest'] as const;
+	const entries = document.querySelectorAll<HTMLElement>('#register > article');
+	const countEl = document.getElementById('masthead-story-count');
+	const emptyEl = document.getElementById('no-stories-message');
+
+	function activeFilter(group: string) {
+		const btn = document.querySelector(`#${group}-filter-container .filter-btn.active`);
+		return btn?.getAttribute('data-filter') ?? 'all';
+	}
+
+	function apply() {
+		const source = activeFilter('source');
+		const industry = activeFilter('industry');
+		const interest = activeFilter('interest');
+		let visible = 0;
+
+		entries.forEach((entry) => {
+			const matches =
+				(source === 'all' || entry.dataset.source === source) &&
+				(industry === 'all' || entry.dataset.industry === industry) &&
+				(interest === 'all' || scoreMatches(interest, entry.dataset.interest));
+
+			entry.toggleAttribute('data-hidden', !matches);
+			// The lead treatment follows the filter: whichever entry is first
+			// in the filtered register leads it.
+			entry.classList.toggle('is-lead', matches && visible === 0);
+			if (matches) visible++;
+		});
+
+		if (countEl) countEl.textContent = `${visible} ${visible === 1 ? 'entry' : 'entries'}`;
+		if (emptyEl) emptyEl.hidden = visible > 0;
+	}
+
+	// "Must-read" is 9 and above, not exactly 9.
+	function scoreMatches(filter: string, score?: string) {
+		const n = Number(score ?? 0);
+		return filter === '9' ? n >= 9 : String(n) === filter;
+	}
+
+	GROUPS.forEach((group) => {
+		const buttons = document.querySelectorAll(`#${group}-filter-container .filter-btn`);
+		buttons.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				buttons.forEach((b) => b.classList.remove('active'));
+				btn.classList.add('active');
+				apply();
+			});
+		});
+	});
+
+	apply();
+</script>

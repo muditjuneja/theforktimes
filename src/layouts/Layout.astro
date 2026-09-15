@@ -1,0 +1,140 @@
+---
+import '../styles/main.scss';
+import { SITE_METADATA } from '../config';
+
+interface Props {
+	title?: string;
+	description?: string;
+	/** Page-specific social image. Build-hashed relative paths are fine. */
+	image?: string;
+	/** og:type. Editions and repo pages are articles; everything else is a page. */
+	type?: 'website' | 'article';
+	/** ISO date for article:published_time, set by dated pages. */
+	publishedTime?: string;
+	/** Keep a page out of the index without removing it from the site. */
+	noindex?: boolean;
+	/** schema.org graph nodes for this page. Emitted as one JSON-LD block. */
+	jsonLd?: object[];
+	/** Overrides the self-referential canonical. Use only to collapse a duplicate. */
+	canonical?: string;
+}
+
+const {
+	title = `${SITE_METADATA.name} | ${SITE_METADATA.tagline}`,
+	description = SITE_METADATA.description,
+	image,
+	type = 'website',
+	publishedTime,
+	noindex = false,
+	jsonLd = [],
+	canonical,
+} = Astro.props;
+
+const canonicalURL = canonical
+	? new URL(canonical, Astro.site)
+	: new URL(Astro.url.pathname, Astro.site);
+
+// Social images must be absolute, and a page-supplied one is a build-hashed
+// relative path, so it has to be resolved against the site rather than passed
+// through. Only the default card has known dimensions to declare.
+const socialImage = new URL(image ?? '/the-fork-times.png', Astro.site).href;
+const isDefaultImage = !image;
+
+const ICONS = [57, 60, 72, 76, 114, 120, 144, 152, 180];
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonicalURL} />
+		<meta
+			name="robots"
+			content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1'}
+		/>
+
+		{ICONS.map((size) => (
+			<link rel="apple-touch-icon" sizes={`${size}x${size}`} href={`/apple-icon-${size}x${size}.png`} />
+		))}
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+
+		<!-- manifest.webmanifest is the real manifest; manifest.json is only the
+		     icon generator's list, and linking both lets the browser pick the one
+		     with no start_url or display. -->
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="theme-color" content="#ecebe3" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#12150f" media="(prefers-color-scheme: dark)" />
+
+		<link rel="alternate" type="application/rss+xml" title={SITE_METADATA.name} href="/rss.xml" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+		<meta property="og:type" content={type} />
+		<meta property="og:site_name" content={SITE_METADATA.name} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonicalURL} />
+		<meta property="og:image" content={socialImage} />
+		<meta property="og:image:alt" content={title} />
+		{isDefaultImage && (
+			<>
+				<meta property="og:image:width" content="1200" />
+				<meta property="og:image:height" content="628" />
+			</>
+		)}
+		{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content={SITE_METADATA.twitter} />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={socialImage} />
+		<meta name="twitter:image:alt" content={title} />
+
+		{jsonLd.length > 0 && (
+			<script
+				type="application/ld+json"
+				is:inline
+				set:html={JSON.stringify(
+					jsonLd.length === 1 ? jsonLd[0] : { '@context': 'https://schema.org', '@graph': jsonLd }
+				)}
+			/>
+		)}
+
+		<!-- Theme is resolved before first paint so a dark-mode reader never sees
+		     a flash of the day register. Inline and synchronous on purpose. -->
+		<script is:inline>
+			(function () {
+				try {
+					var saved = localStorage.getItem('theme');
+					document.documentElement.dataset.theme =
+						saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+				} catch (e) {
+					document.documentElement.dataset.theme = 'light';
+				}
+			})();
+
+			document.addEventListener('DOMContentLoaded', function () {
+				var toggle = document.getElementById('theme-toggle');
+				if (!toggle) return;
+				toggle.addEventListener('click', function () {
+					var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+					document.documentElement.dataset.theme = next;
+					try { localStorage.setItem('theme', next); } catch (e) {}
+					window.dispatchEvent(new CustomEvent('theme-changed', { detail: next }));
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>

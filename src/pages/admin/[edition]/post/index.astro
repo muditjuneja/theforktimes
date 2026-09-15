@@ -1,0 +1,309 @@
+---
+// Draft, review and post an X announcement for one edition. A dedicated
+// route rather than folded into /admin/<date>/ on purpose: posting is
+// public and cannot meaningfully be retracted, so it stays a separate,
+// deliberate action, never a side effect of anything on the edition editor.
+//
+// Mirrors `npm run tweet -- --date <date>` (see scripts/tweet.js) with the
+// same defaults - GitHub-page card, no URL - rather than reinventing them;
+// --candidates/--repo/--card fork/--link stay CLI-only for now (AGENTS.md).
+//
+// Same shape as the edition editor: prerender=false, cloudflare:workers env,
+// plain POST forms, POST/redirect/GET. The one thing genuinely different
+// here is that a mistake is not just wrong data in D1 - it is a real,
+// irreversible public post - so the safety checks in admin-db.ts
+// (claimPost's atomic, read-verified claim especially) are load-bearing,
+// not decorative. See the comment on edition_posts in schema.sql.
+export const prerender = false;
+
+import { env } from 'cloudflare:workers';
+import {
+	getEditionEntriesForPost, getEditionPost,
+	saveDraft, claimPost, recordPosted, clearFailedClaim,
+} from '../../../../lib/admin-db.ts';
+import { hasEditorialNote } from '../../../../lib/meta.ts';
+import { DEFAULT_MODEL, LIMIT, buildPrompt, generate, altTextFor } from '../../../../../scripts/lib/post-draft.js';
+import { xCredentials, postTweet, uploadMedia, containsUrl, estimateCost } from '../../../../../scripts/lib/x.js';
+import { githubCard, pickBackend } from '../../../../../scripts/lib/shot.js';
+
+const { edition } = Astro.params as { edition: string };
+
+// A claim older than this is treated as abandoned (a crashed or hard-timed-
+// out request that never reached its own cleanup) rather than in-flight, and
+// /admin offers a manual way to clear it. Generous on purpose: Kitesurf,
+// OpenRouter and X are all normally sub-few-seconds, so a couple of minutes
+// is "clearly not still running", not a tight race against a slow request.
+const STALE_CLAIM_MS = 3 * 60 * 1000;
+
+function redirectWithError(message: string) {
+	return Astro.redirect(`/admin/${edition}/post/?error=${encodeURIComponent(message)}`, 303);
+}
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const action = String(form.get('action') ?? '');
+
+	if (action === 'generate') {
+		const apiKey = env.OPENROUTER_API_KEY;
+		if (!apiKey) return redirectWithError('OPENROUTER_API_KEY is not set; cannot draft a post.');
+
+		const entries = await getEditionEntriesForPost(env.DB, edition);
+		if (entries.length === 0) return redirectWithError(`No edition ${edition} in D1.`);
+
+		try {
+			const prompt = buildPrompt(entries, { date: edition });
+			const [text] = await generate(prompt, { model: DEFAULT_MODEL, apiKey, n: 1 });
+			if (!text) return redirectWithError('OpenRouter returned no draft.');
+			await saveDraft(env.DB, edition, { subjectSlug: entries[0].repo, text, model: DEFAULT_MODEL });
+		} catch (err: any) {
+			return redirectWithError(err.message ?? String(err));
+		}
+	} else if (action === 'post') {
+		const entries = await getEditionEntriesForPost(env.DB, edition);
+		const unedited = entries.filter((e) => !hasEditorialNote(e.why));
+		if (unedited.length > 0) {
+			return redirectWithError(
+				`Refusing to post: ${unedited.length} of ${entries.length} entries still lack an editorial note.`
+			);
+		}
+
+		const post = await getEditionPost(env.DB, edition);
+		if (!post?.draft_text) return redirectWithError('Generate a draft first.');
+
+		// The text actually posted is whatever was in the textarea at submit
+		// time, not post.draft_text - the draft is editable (matching how
+		// why_it_matters is editable everywhere else in /admin), and this way
+		// what gets sent to X is provably identical to what the operator last
+		// saw and approved, never a stored value that could have drifted from
+		// it in some other way.
+		const text = String(form.get('text') ?? '').trim();
+		if (!text) return redirectWithError('Refusing to post: empty text.');
+		if (text.length > LIMIT) {
+			return redirectWithError(`Refusing to post: ${text.length} characters exceeds the ${LIMIT} limit.`);
+		}
+
+		const { creds, missing } = xCredentials(env);
+		if (missing.length > 0) return redirectWithError(`Cannot post - missing credentials: ${missing.join(', ')}`);
+
+		// The claim itself is the real guard (see admin-db.ts) - this must be
+		// the last check before any network call, and nothing below may run
+		// if it returns false.
+		if (!(await claimPost(env.DB, edition))) {
+			return redirectWithError('Already posted, or a post is already in progress for this edition.');
+		}
+
+		try {
+			const subject = entries.find((e) => e.repo === post.subject_slug) ?? entries[0];
+			let mediaIds: string[] | undefined;
+
+			if (form.get('attach_image') === 'on') {
+				const backend = pickBackend(env, 'kitesurf');
+				const card = await githubCard(subject.repo, { backend });
+				mediaIds = [await uploadMedia(card, { creds, altText: altTextFor(subject, 'github') })];
+			}
+
+			const result = await postTweet(text, { creds, mediaIds });
+			// result.id ?? 'unknown', not a non-null assertion: postTweet()
+			// having already succeeded is the point of no return - the post is
+			// live regardless of what its response body parsed to, so this
+			// must not throw and must not leave the claim to be released.
+			// Releasing it here would let a retry post the same text again,
+			// for real, against an edition that is already live.
+			await recordPosted(env.DB, edition, {
+				text,
+				tweetId: result.id ?? 'unknown',
+				mediaId: mediaIds?.[0] ?? null,
+				costEstimate: estimateCost(text),
+			});
+		} catch (err: any) {
+			await clearFailedClaim(env.DB, edition);
+			return redirectWithError(err.message ?? String(err));
+		}
+	} else if (action === 'clear-claim') {
+		const post = await getEditionPost(env.DB, edition);
+		const claimedAt = post?.post_claimed_at ? new Date(post.post_claimed_at).getTime() : 0;
+		if (post && !post.posted_tweet_id && Date.now() - claimedAt > STALE_CLAIM_MS) {
+			await clearFailedClaim(env.DB, edition);
+		}
+	}
+
+	return Astro.redirect(`/admin/${edition}/post/`, 303);
+}
+
+const entries = await getEditionEntriesForPost(env.DB, edition);
+if (entries.length === 0) return new Response('No such edition', { status: 404 });
+
+const post = await getEditionPost(env.DB, edition);
+const unedited = entries.filter((e) => !hasEditorialNote(e.why));
+const error = Astro.url.searchParams.get('error');
+
+const hasOpenRouterKey = Boolean(env.OPENROUTER_API_KEY);
+const { missing: missingXCreds } = xCredentials(env);
+const hasKitesurfCreds = Boolean(env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN);
+
+const claimedAt = post?.post_claimed_at ? new Date(post.post_claimed_at).getTime() : 0;
+const claimIsStale = Boolean(post?.post_claimed_at) && !post?.posted_tweet_id && Date.now() - claimedAt > STALE_CLAIM_MS;
+const claimInFlight = Boolean(post?.post_claimed_at) && !post?.posted_tweet_id && !claimIsStale;
+
+const draftLen = post?.draft_text?.length ?? 0;
+const overLimit = draftLen > LIMIT;
+const urlWarning = post?.draft_text ? containsUrl(post.draft_text) : false;
+const cost = post?.draft_text ? estimateCost(post.draft_text) : null;
+---
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Post to X — {edition} — admin</title>
+	<style>
+		body { font: 15px/1.5 -apple-system, system-ui, sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+		.notice { background: #fff7e6; border: 1px solid #e8c877; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		.error { background: #fde8e8; border: 1px solid #e39a9a; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		.ok { background: #e3f5e6; border: 1px solid #9fd6ac; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 0.6rem 0.7rem; border: 1px solid #ccc; border-radius: 4px; min-height: 6rem; }
+		.meta-row { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 0.35rem; }
+		.meta-row .warn { color: #b45309; font-weight: 600; }
+		.meta-row .over { color: #b91c1c; font-weight: 600; }
+		.card-preview { max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin-top: 0.75rem; }
+		.row-actions { margin-top: 0.75rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+		button { font-size: 13px; cursor: pointer; padding: 0.4rem 0.8rem; }
+		.danger { color: #b91c1c; font-weight: 600; }
+		label.checkbox { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 13px; }
+		.dim { color: #888; font-size: 13px; }
+		a { color: #0b5fff; }
+	</style>
+</head>
+<body>
+	<p><a href={`/admin/${edition}/`}>&larr; {edition}</a></p>
+	<h1>Post to X</h1>
+	<p class="notice">
+		Posting sends a public post as @forktimeshq immediately and cannot be
+		meaningfully undone. There is no draft-then-confirm-later step past this
+		page - review the text below before pressing Post.
+	</p>
+
+	{error && <p class="error">{error}</p>}
+
+	{unedited.length > 0 && (
+		<p class="error">
+			{unedited.length} of {entries.length} entries still lack an editorial
+			note - posting is refused until every entry in the edition has one.
+		</p>
+	)}
+
+	{post?.posted_tweet_id ? (
+		<div class="ok">
+			<p><strong>Already posted.</strong></p>
+			<p>{post.posted_text}</p>
+			<p>
+				<a href={`https://x.com/forktimeshq/status/${post.posted_tweet_id}`} target="_blank" rel="noopener noreferrer">
+					View on X
+				</a>
+				{typeof post.posted_cost_estimate === 'number' && <> &middot; billed ~${post.posted_cost_estimate.toFixed(3)}</>}
+				{post.posted_at && <> &middot; {post.posted_at}</>}
+			</p>
+		</div>
+	) : (
+		<>
+			{claimInFlight && (
+				<p class="notice">A post is currently in progress for this edition. Refresh in a moment.</p>
+			)}
+			{claimIsStale && (
+				<div class="error">
+					<p>
+						A post attempt for this edition did not finish (claimed at {post!.post_claimed_at},
+						over 3 minutes ago) and never recorded success or failure - possibly a crashed or
+						timed-out request. Check <a href="https://x.com/forktimeshq" target="_blank" rel="noopener noreferrer">@forktimeshq</a>
+						directly before clearing this, in case it actually went out.
+					</p>
+					<form method="POST">
+						<input type="hidden" name="action" value="clear-claim" />
+						<button type="submit">Clear stuck attempt</button>
+					</form>
+				</div>
+			)}
+
+			<form method="POST">
+				<input type="hidden" name="action" value="generate" />
+				<button type="submit" disabled={!hasOpenRouterKey || claimInFlight}>
+					{post?.draft_text ? 'Regenerate draft' : 'Generate draft'}
+				</button>
+				{!hasOpenRouterKey && <span class="dim"> — OPENROUTER_API_KEY is not set</span>}
+			</form>
+
+			{post?.draft_text && (
+				<>
+					<form method="POST" style="margin-top: 1rem;" onsubmit={`return confirm('Post this to @forktimeshq now? This cannot be undone.')`}>
+						<label for="draft-text">Draft - editable; whatever is here when you press Post is what gets sent</label>
+						<textarea id="draft-text" name="text">{post.draft_text}</textarea>
+						<div class="meta-row">
+							<span id="draft-count" class={overLimit ? 'over' : ''}>{draftLen}/{LIMIT} characters{overLimit ? ' — OVER LIMIT' : ''}</span>
+							<span id="draft-cost" class={urlWarning ? 'warn' : ''}>
+								~${cost?.toFixed(3)}{urlWarning ? ' (contains a link - $0.20 URL surcharge)' : ''}
+							</span>
+						</div>
+
+						{hasKitesurfCreds ? (
+							<>
+								<img class="card-preview" src={`/admin/${edition}/post/card.png`} alt="GitHub card preview" loading="lazy" />
+								<label class="checkbox">
+									<input type="checkbox" name="attach_image" checked />
+									Attach this card as media
+								</label>
+							</>
+						) : (
+							<p class="dim">
+								CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN not set - posting text-only, no card.
+							</p>
+						)}
+
+						<div class="row-actions">
+							<input type="hidden" name="action" value="post" />
+							<button
+								type="submit"
+								id="post-submit"
+								class="danger"
+								data-hard-disabled={unedited.length > 0 || missingXCreds.length > 0 || claimInFlight ? '1' : ''}
+								disabled={overLimit || unedited.length > 0 || missingXCreds.length > 0 || claimInFlight}
+							>
+								Post to X now
+							</button>
+							{missingXCreds.length > 0 && <span class="dim">missing: {missingXCreds.join(', ')}</span>}
+						</div>
+					</form>
+				</>
+			)}
+		</>
+	)}
+
+	<script define:vars={{ limit: LIMIT }}>
+		// Live feedback only, purely cosmetic - the server independently
+		// re-validates length on submit regardless (see action === 'post'
+		// above), so nothing here is load-bearing for correctness. Duplicates
+		// containsUrl()'s regex from scripts/lib/x.js in plain client JS
+		// rather than importing it, since this is the one script tag in an
+		// otherwise no-build admin page.
+		const textarea = document.getElementById('draft-text');
+		const countEl = document.getElementById('draft-count');
+		const costEl = document.getElementById('draft-cost');
+		const submitBtn = document.getElementById('post-submit');
+		if (textarea && countEl && costEl && submitBtn) {
+			const containsUrl = (s) => /https?:\/\/|\bwww\.|\b[a-z0-9-]+\.(com|org|net|io|dev|ai|co|sh|cat)\b/i.test(s);
+			const update = () => {
+				const len = textarea.value.length;
+				const over = len > limit;
+				countEl.textContent = `${len}/${limit} characters${over ? ' — OVER LIMIT' : ''}`;
+				countEl.classList.toggle('over', over);
+				const hasUrl = containsUrl(textarea.value);
+				costEl.textContent = `~$${(hasUrl ? 0.20 : 0.015).toFixed(3)}${hasUrl ? ' (contains a link - $0.20 URL surcharge)' : ''}`;
+				costEl.classList.toggle('warn', hasUrl);
+				submitBtn.disabled = over || textarea.value.trim() === '' || submitBtn.dataset.hardDisabled === '1';
+			};
+			textarea.addEventListener('input', update);
+			update();
+		}
+	</script>
+</body>
+</html>

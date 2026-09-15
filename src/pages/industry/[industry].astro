@@ -1,0 +1,116 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_METADATA } from '../../config';
+import { INDUSTRY_LABEL, AI_CATEGORY_LABEL } from '../../data/taxonomy';
+import { breadcrumbs, collectionPage } from '../../lib/schema';
+import { repoPath } from '../../lib/routes';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('repos');
+	const byIndustry = new Map<string, typeof entries>();
+	for (const entry of entries) {
+		const key = entry.data.industry ?? 'devtools';
+		const list = byIndustry.get(key) ?? [];
+		// One card per repo, using its most recent appearance.
+		if (!list.some((e) => e.data.repo === entry.data.repo)) list.push(entry);
+		byIndustry.set(key, list);
+	}
+	// The nav can only link beats that actually have a page. Pages exist for
+	// the industries present in the corpus, not for every label in the
+	// taxonomy, so rendering the full label list produced a 404 for every beat
+	// no edition had covered yet.
+	const present = [...byIndustry.keys()];
+
+	return [...byIndustry.entries()].map(([industry, repos]) => ({
+		params: { industry },
+		props: {
+			industry,
+			present,
+			repos: repos.sort((a, b) => (b.data.interest_score ?? 0) - (a.data.interest_score ?? 0)),
+		},
+	}));
+}
+
+const { industry, present, repos } = Astro.props;
+const label = INDUSTRY_LABEL[industry as keyof typeof INDUSTRY_LABEL] ?? industry;
+
+// AI is the one beat big enough that a flat list is not useful, so it gets
+// grouped by sub-category instead.
+const isAi = industry === 'ai';
+const grouped = new Map<string, typeof repos>();
+if (isAi) {
+	for (const r of repos) {
+		const key = r.data.ai_category ?? 'tooling';
+		grouped.set(key, [...(grouped.get(key) ?? []), r]);
+	}
+}
+const fmt = (n?: number) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
+
+const pageTitle = `${label} | ${SITE_METADATA.name}`;
+const pageDescription = `Open source ${label} projects ranked by velocity.`;
+
+const jsonLd = [
+	collectionPage({
+		path: `/industry/${industry}/`,
+		name: pageTitle,
+		description: pageDescription,
+		itemListName: `${label} projects ranked by star velocity`,
+		items: repos.map((r) => ({ name: r.data.repo, path: repoPath(r.data.repo) })),
+	}),
+	breadcrumbs([{ name: label, path: `/industry/${industry}/` }]),
+];
+---
+
+<Layout title={pageTitle} description={pageDescription} jsonLd={jsonLd}>
+	<main class="page-container">
+		<article class="newspaper-sheet repo-sheet">
+			<header class="repo-header">
+				<div class="repo-eyebrow"><a class="masthead-eyebrow-link" href="/">&larr; {SITE_METADATA.name}</a></div>
+				<h1 class="repo-title">{label}</h1>
+				<p class="repo-headline-metric">{repos.length} {repos.length === 1 ? 'project' : 'projects'}, ranked by velocity</p>
+			</header>
+
+			<nav class="industry-nav">
+				{Object.entries(INDUSTRY_LABEL)
+					.filter(([key]) => present.includes(key))
+					.map(([key, name]) => (
+						<a href={`/industry/${key}/`} class={key === industry ? 'is-current' : ''}>{name}</a>
+					))}
+			</nav>
+
+			{isAi ? (
+				[...grouped.entries()].map(([cat, list]) => (
+					<section class="industry-group">
+						<h2 class="repo-section-title">{AI_CATEGORY_LABEL[cat as keyof typeof AI_CATEGORY_LABEL] ?? cat}</h2>
+						<ul class="repo-list">
+							{list.map((r) => (
+								<li>
+									<a class="repo-list-name" href={repoPath(r.data.repo)}>{r.data.repo}</a>
+									<span class="repo-list-meta">{fmt(r.data.stars)} stars{r.data.language ? ` · ${r.data.language}` : ''}</span>
+									{r.data.alternative_to.length > 0 && (
+										<span class="repo-list-alt">alternative to {r.data.alternative_to.join(', ')}</span>
+									)}
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			) : (
+				<ul class="repo-list">
+					{repos.map((r) => (
+						<li>
+							<a class="repo-list-name" href={repoPath(r.data.repo)}>{r.data.repo}</a>
+							<span class="repo-list-meta">{fmt(r.data.stars)} stars{r.data.language ? ` · ${r.data.language}` : ''}</span>
+							{r.data.alternative_to.length > 0 && (
+								<span class="repo-list-alt">alternative to {r.data.alternative_to.join(', ')}</span>
+							)}
+						</li>
+					))}
+				</ul>
+			)}
+			<Footer />
+		</article>
+	</main>
+</Layout>

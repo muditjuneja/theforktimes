@@ -1,0 +1,163 @@
+---
+// A small WebGL star-history plot.
+//
+// Renders only from real observations: the backfilled stargazer curve on a
+// repo's first appearance, and `repo_snapshots` from D1 thereafter. It is
+// deliberately not drawn when there are fewer than two points - a single
+// observation can only produce a straight line from zero, which would look
+// like history while carrying no information.
+interface Point { date: string; stars: number }
+interface Props { points: Point[]; repo: string }
+
+const { points, repo } = Astro.props;
+const enough = Array.isArray(points) && points.length >= 2;
+const id = `stargraph-${repo.replace(/[^a-z0-9]/gi, '-')}`;
+---
+
+{enough ? (
+	<figure class="star-graph">
+		<div class="star-graph-canvas" id={id} data-points={JSON.stringify(points)}></div>
+		<figcaption class="star-graph-caption">
+			Stars over time &mdash; {points.length} observations,
+			{' '}{points[0].date} to {points[points.length - 1].date}.
+		</figcaption>
+	</figure>
+) : (
+	<p class="star-graph-empty">
+		Star history needs at least two observations. It backfills on the next
+		ingest run with a GitHub token, and accrues nightly thereafter.
+	</p>
+)}
+
+<script>
+	// three.js is ~554 kB minified, which is far more than a static line chart
+	// is worth on a mobile connection - and most repo pages carry no history at
+	// all (the curve needs two observations, so it is absent until a repo's
+	// second nightly snapshot). A static `import` is hoisted into the page
+	// bundle whether or not a graph renders, so it is loaded two ways instead:
+	// only when a canvas is actually on the page, and only once that canvas is
+	// near the viewport. Vite code-splits the dynamic import into its own
+	// chunk, so a page with no graph never requests it.
+	type Point = { date: string; stars: number };
+	type Three = typeof import('three');
+
+	async function draw(THREE: Three, container: HTMLElement) {
+		const points: Point[] = JSON.parse(container.dataset.points ?? '[]');
+		if (points.length < 2) return;
+
+		const width = container.clientWidth || 640;
+		const height = container.clientHeight || 220;
+
+		// Ink colour follows the active theme, so the plot matches the page
+		// rather than hardcoding a palette that breaks in dark mode.
+		const styles = getComputedStyle(document.documentElement);
+		const ink = styles.getPropertyValue('--ink')?.trim() || '#1a1a1a';
+		const accent = styles.getPropertyValue('--accent')?.trim() || '#8b2b1f';
+
+		const scene = new THREE.Scene();
+		const camera = new THREE.OrthographicCamera(0, 1, 1, 0, -10, 10);
+		camera.position.z = 1;
+
+		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.setSize(width, height);
+		container.appendChild(renderer.domElement);
+
+		const maxStars = Math.max(...points.map((p) => p.stars)) || 1;
+		const t0 = new Date(points[0].date).getTime();
+		const t1 = new Date(points[points.length - 1].date).getTime();
+		const span = Math.max(1, t1 - t0);
+
+		// Normalised device coords in [0,1] with a small margin, so the
+		// orthographic camera needs no further transform.
+		const xy = points.map((p) => {
+			const x = 0.04 + 0.92 * ((new Date(p.date).getTime() - t0) / span);
+			const y = 0.12 + 0.8 * (p.stars / maxStars);
+			return new THREE.Vector3(x, y, 0);
+		});
+
+		// Filled area under the curve.
+		const shape = new THREE.Shape();
+		shape.moveTo(xy[0].x, 0.12);
+		for (const v of xy) shape.lineTo(v.x, v.y);
+		shape.lineTo(xy[xy.length - 1].x, 0.12);
+		shape.closePath();
+		const fill = new THREE.Mesh(
+			new THREE.ShapeGeometry(shape),
+			new THREE.MeshBasicMaterial({ color: new THREE.Color(accent), transparent: true, opacity: 0.13 })
+		);
+		scene.add(fill);
+
+		// The curve itself.
+		const line = new THREE.Line(
+			new THREE.BufferGeometry().setFromPoints(xy),
+			new THREE.LineBasicMaterial({ color: new THREE.Color(accent) })
+		);
+		scene.add(line);
+
+		// Baseline.
+		scene.add(new THREE.Line(
+			new THREE.BufferGeometry().setFromPoints([
+				new THREE.Vector3(0.04, 0.12, 0), new THREE.Vector3(0.96, 0.12, 0),
+			]),
+			new THREE.LineBasicMaterial({ color: new THREE.Color(ink), transparent: true, opacity: 0.35 })
+		));
+
+		// Observation markers.
+		const dots = new THREE.Points(
+			new THREE.BufferGeometry().setFromPoints(xy),
+			new THREE.PointsMaterial({ color: new THREE.Color(accent), size: 5, sizeAttenuation: false })
+		);
+		scene.add(dots);
+
+		renderer.render(scene, camera);
+
+		const onResize = () => {
+			const w = container.clientWidth || width;
+			renderer.setSize(w, height);
+			renderer.render(scene, camera);
+		};
+		window.addEventListener('resize', onResize);
+
+		// Repaint on theme change so the curve keeps matching the page.
+		new MutationObserver(() => {
+			const s = getComputedStyle(document.documentElement);
+			const nextAccent = new THREE.Color(s.getPropertyValue('--accent')?.trim() || accent);
+			(line.material as THREE.LineBasicMaterial).color = nextAccent;
+			(fill.material as THREE.MeshBasicMaterial).color = nextAccent;
+			(dots.material as THREE.PointsMaterial).color = nextAccent;
+			renderer.render(scene, camera);
+		}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+	}
+
+	const canvases = document.querySelectorAll<HTMLElement>('.star-graph-canvas');
+
+	if (canvases.length > 0) {
+		let loader: Promise<Three> | null = null;
+		const three = () => (loader ??= import('three'));
+
+		const render = async (container: HTMLElement) => {
+			if (container.dataset.drawn) return;
+			container.dataset.drawn = 'true';
+			await draw(await three(), container);
+		};
+
+		// No IntersectionObserver (or a graph already in view on load) just
+		// means drawing immediately rather than not at all.
+		if (typeof IntersectionObserver === 'undefined') {
+			canvases.forEach(render);
+		} else {
+			const observer = new IntersectionObserver(
+				(entries, obs) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue;
+						obs.unobserve(entry.target);
+						render(entry.target as HTMLElement);
+					}
+				},
+				{ rootMargin: '200px' }
+			);
+			canvases.forEach((c) => observer.observe(c));
+		}
+	}
+</script>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #2f5d3f; text-decoration: none; }
+    a:hover { color: #1f4029; }
+    .label { font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.20em; text-transform: uppercase; }
+  </style>
+</helmet>
+
+<div style="width: 860px; height: 1240px; box-sizing: border-box; background: #ecebe3; color: #232820; font-family: 'Crimson Pro', Georgia, serif; font-variant-numeric: oldstyle-nums; padding: 40px 46px; display: flex; flex-direction: column; gap: 20px;">
+
+  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+    <span class="label" style="color: #6d7268;">&larr; The Fork Times &nbsp;&middot;&nbsp; Alternatives</span>
+    <span class="label" style="color: #6d7268;">Standing entry, revised weekly</span>
+  </div>
+  <div style="border-top: 3px double #232820;"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 9px; align-items: center; text-align: center;">
+    <span class="label" style="color: #2f5d3f;">Open source substitutes for</span>
+    <span style="font-size: 52px; font-weight: 700; line-height: 1.04;">Notion</span>
+    <span style="font-style: italic; font-size: 15px; color: #4f5449; max-width: 62ch;">A substitution is listed when the project genuinely replaces Notion for a real use case &mdash; not merely because their feature lists overlap.</span>
+    <span class="label" style="color: #6d7268; font-weight: 400;">Three entries</span>
+  </div>
+
+  <div style="border-top: 1px solid #232820;"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 0;">
+
+    <div style="display: flex; gap: 26px; padding: 18px 0; border-bottom: 1px solid #d5d8cd;">
+      <span class="label" style="color: #6d7268; width: 28px; flex-shrink: 0; padding-top: 6px;">I</span>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0;">
+        <span style="font-size: 25px; font-weight: 700;">toeverything/affine</span>
+        <span style="font-size: 16px; line-height: 1.58; color: #34392f;">Local-first workspace storing data on disk with CRDT sync, combining a document editor, whiteboard canvas and databases in one block-based interface.</span>
+        <span class="label" style="color: #6d7268; font-weight: 400;">Productivity &nbsp;&middot;&nbsp; Not yet measured &mdash; has not appeared in an edition</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 26px; padding: 18px 0; border-bottom: 1px solid #d5d8cd;">
+      <span class="label" style="color: #6d7268; width: 28px; flex-shrink: 0; padding-top: 6px;">II</span>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0;">
+        <span style="font-size: 25px; font-weight: 700;">outline/outline</span>
+        <span style="font-size: 16px; line-height: 1.58; color: #34392f;">Real-time collaborative wiki storing documents as markdown over Postgres, shipped as a Docker image for self-hosting.</span>
+        <span class="label" style="color: #6d7268; font-weight: 400;">Productivity &nbsp;&middot;&nbsp; Not yet measured &mdash; has not appeared in an edition</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 26px; padding: 18px 0;">
+      <span class="label" style="color: #6d7268; width: 28px; flex-shrink: 0; padding-top: 6px;">III</span>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0;">
+        <span style="font-size: 25px; font-weight: 700;">appflowy-io/appflowy</span>
+        <span style="font-size: 16px; line-height: 1.58; color: #34392f;">Rust core with a Flutter UI, so the same codebase runs desktop, mobile and web clients against a self-hosted sync server.</span>
+        <span class="label" style="color: #6d7268; font-weight: 400;">Productivity &nbsp;&middot;&nbsp; Not yet measured &mdash; has not appeared in an edition</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="border-top: 3px double #232820; padding-top: 16px; display: flex; flex-direction: column; gap: 9px;">
+    <span class="label" style="color: #2f5d3f;">How this list is made</span>
+    <span style="font-size: 15.5px; line-height: 1.62; color: #34392f;">Notion is a commercial product, so &ldquo;what replaces it&rdquo; is a question with a real answer. Every substitution here is a curated editorial claim, not a topic match: the table it comes from is maintained by hand. Projects are ranked by stars per day since launch, the fallback used until a project has two snapshots a week apart. Projects marked unmeasured are claims we stand behind but have not yet put a number to, because they have not appeared in an edition.</span>
+  </div>
+
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+    <div style="width: 100%; border-top: 1px solid #c3c6ba;"></div>
+    <span class="label" style="color: #6d7268; font-weight: 400; padding-top: 4px;">Front page &middot; Archive &middot; Alternatives &middot; RSS &middot; theforktimes.com</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

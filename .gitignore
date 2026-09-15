@@ -1,0 +1,39 @@
+# build output
+dist/
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.production
+.dev.vars
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# generated social cards
+.cards/
+
+# wrangler local state
+.wrangler/
+
+# Seeded design-canvas payload: ~2.4 MB of precompiled editor code, rebuilt
+# from the .dc.html sources beside it. The sources are the thing worth keeping.
+.design/*.html
+!.design/*.dc.html
+
+# rendered email issues (pasted into Transmit, not shipped)
+.issues/

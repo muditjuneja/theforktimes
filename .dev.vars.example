@@ -1,0 +1,40 @@
+# Local secrets for `npm run dev` / `npm run preview:cf` / `wrangler dev`.
+#
+# Copy to `.dev.vars` (gitignored - never commit real values) and fill in
+# whichever you need for what you're testing. Nothing here is required to
+# browse the public site; each feature below fails cleanly with an inline
+# message when its own secret is missing, per AGENTS.md. The one exception:
+# /admin/* itself needs the first two below, and fails *closed* (a plain 500,
+# not an unauthenticated /admin) without them - see src/middleware.ts.
+
+# /admin/* auth (src/middleware.ts, src/lib/admin-auth.ts). Any password and
+# any long random string work locally - e.g. `openssl rand -hex 32` for the
+# secret. Both required; either missing serves a 500 for all of /admin/*.
+ADMIN_PASSWORD=
+ADMIN_SESSION_SECRET=
+
+# scripts/ingest.js's star-history backfill; worker/index.js's nightly/weekly
+# crons (real runs only - these are self-contained in the Worker, not read
+# from here, see "Ingestion" in AGENTS.md)
+GITHUB_TOKEN=
+
+# blurbs.js, and /admin/<date>/post/'s "Generate draft" (scripts/lib/post-draft.js)
+OPENROUTER_API_KEY=
+
+# X posting - scripts/tweet.js and /admin/<date>/post/. OAuth 1.0a user
+# context for @forktimeshq; see "Posting to X" in AGENTS.md for how these are
+# used and why signing a JSON body incorrectly gives a misleading 401.
+X_API_KEY=
+X_API_SECRET=
+X_ACCESS_TOKEN=
+X_ACCESS_TOKEN_SECRET=
+
+# Kitesurf (Cloudflare Browser Run) card rendering, for the same two X-posting
+# paths above. Missing these means posting text-only, not a broken image -
+# see pickBackend() in scripts/lib/shot.js.
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+
+# /subscribe - forwards to Transmit (xmit.sh)
+XMIT_API_KEY=
+XMIT_LIST_ID=

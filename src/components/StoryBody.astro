@@ -1,0 +1,40 @@
+---
+// The edition-card body: description, then a facts line, then an optional
+// Hacker News line. This is derived from the measurements, not editorial -
+// the editorial claim is why_it_matters, rendered as the hover tooltip in
+// EditionPage.astro, not here.
+//
+// D1-backed entries have no file, so there is nothing to render() - this
+// replaces what used to be scripts/ingest.js's buildBody() markdown string
+// with the same three lines as real markup.
+interface Props {
+	description?: string;
+	stars: number;
+	forks: number;
+	stars_delta_7d?: number;
+	stars_per_day?: number;
+	language?: string;
+	hn_points?: number;
+	hn_comments?: number;
+}
+
+const { description, stars, forks, stars_delta_7d, stars_per_day, language, hn_points, hn_comments } = Astro.props;
+
+const num = (n: number) => n.toLocaleString('en-US');
+---
+
+{description && <p>{description}</p>}
+
+<p>
+	<strong>{num(stars)}</strong> stars · <strong>{num(forks)}</strong> forks
+	{typeof stars_delta_7d === 'number' ? (
+		<> · <strong>{stars_delta_7d >= 0 ? '+' : ''}{num(stars_delta_7d)}</strong> this week</>
+	) : typeof stars_per_day === 'number' ? (
+		<> · <strong>{stars_per_day.toFixed(1)}</strong> stars/day since launch</>
+	) : null}
+	{language && <> · primary language <strong>{language}</strong></>}.
+</p>
+
+{typeof hn_points === 'number' && (
+	<p>Discussed on Hacker News at {hn_points} points with {hn_comments ?? 0} comments.</p>
+)}

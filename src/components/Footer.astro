@@ -1,0 +1,31 @@
+---
+import { SITE_METADATA } from '../config';
+
+interface Props {
+	label?: string;
+	showDelayNote?: boolean;
+}
+
+const { label, showDelayNote = false } = Astro.props;
+---
+
+<footer class="edition-colophon">
+	{showDelayNote && (
+		<p class="edition-delay-note">
+			Note: Editions close two days back, so star counts and Hacker News threads have time to settle.
+		</p>
+	)}
+	<div class="colophon-row">
+		{label ? `End of Edition — ${label}` : SITE_METADATA.name}
+	</div>
+	<!-- The two evergreen surfaces were reachable only from the edition
+	     masthead, which repo and alternatives pages do not render - so they
+	     were orphaned from exactly the pages that should be passing them link
+	     equity. -->
+	<nav class="colophon-row colophon-nav">
+		<a href="/">Front page</a> &bull; <a href="/archive/">Archive</a> &bull; <a href="/alternatives/">Alternatives</a>
+	</nav>
+	<div class="colophon-row">
+		<a href="https://github.com/muditjuneja/theforktimes" target="_blank" rel="noopener noreferrer">GitHub</a> &bull; <a href="/rss.xml">RSS</a> &bull; &copy; <a href="https://theforktimes.com" target="_blank" rel="noopener noreferrer">theforktimes.com</a>
+	</div>
+</footer>

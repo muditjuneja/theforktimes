@@ -1,0 +1,67 @@
+---
+// The one /admin/* path src/middleware.ts lets through unauthenticated -
+// everything else in /admin is gated by the cookie this page sets on a
+// correct password. See src/lib/admin-auth.ts.
+export const prerender = false;
+
+import { env } from 'cloudflare:workers';
+import { SESSION_COOKIE, checkPassword, createSessionToken } from '../../lib/admin-auth.ts';
+
+// Only ever redirect back into /admin - an unvalidated next= would be an
+// open redirect hanging off the back of a login form.
+function safeNext(value: string | null): string {
+	return value && value.startsWith('/admin') ? value : '/admin/';
+}
+
+let error = false;
+let next = safeNext(Astro.url.searchParams.get('next'));
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const password = String(form.get('password') ?? '');
+	next = safeNext(String(form.get('next') ?? ''));
+
+	if (checkPassword(password, env.ADMIN_PASSWORD)) {
+		Astro.cookies.set(SESSION_COOKIE, createSessionToken(env.ADMIN_SESSION_SECRET as string), {
+			httpOnly: true,
+			// The actual scheme of this request, not a build-mode flag: a
+			// `npm run preview:cf` build is a production build served locally
+			// over plain http, where a Secure cookie would silently fail to
+			// be stored and login would never appear to "take".
+			secure: Astro.url.protocol === 'https:',
+			sameSite: 'lax',
+			path: '/admin',
+			maxAge: 30 * 24 * 60 * 60,
+		});
+		return Astro.redirect(next, 303);
+	}
+	error = true;
+}
+---
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Sign in — admin</title>
+	<style>
+		body { font: 15px/1.5 -apple-system, system-ui, sans-serif; max-width: 340px; margin: 4rem auto; padding: 0 1rem; color: #1a1a1a; }
+		h1 { font-size: 1.1rem; }
+		.error { background: #fde8e8; border: 1px solid #e39a9a; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 14px; }
+		label { display: block; font-size: 12px; color: #555; margin-bottom: 0.25rem; }
+		input[type="password"] { width: 100%; box-sizing: border-box; font: inherit; padding: 0.5rem 0.6rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 0.85rem; }
+		button { font-size: 14px; cursor: pointer; padding: 0.5rem 1rem; }
+	</style>
+</head>
+<body>
+	<h1>The Fork Times — admin</h1>
+	{error && <p class="error">Wrong password.</p>}
+	<form method="POST">
+		<input type="hidden" name="next" value={next} />
+		<label for="password">Password</label>
+		<input type="password" id="password" name="password" autofocus required />
+		<button type="submit">Sign in</button>
+	</form>
+</body>
+</html>

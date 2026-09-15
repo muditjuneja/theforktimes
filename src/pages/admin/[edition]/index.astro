@@ -1,0 +1,200 @@
+---
+// The slate editor: one edition, its entries, editable in place. Every
+// write here lands in D1 immediately and changes nothing public - see the
+// notice on /admin and AGENTS.md's "Publishing is manual".
+//
+// Plain POST forms, no client JS: this is a single-operator tool behind
+// src/middleware.ts's password gate, not a public surface, so the
+// progressive-enhancement layer Subscribe.astro adds for readers is not
+// worth it here. Each POST
+// redirects back to this same page (POST/redirect/GET) so a refresh never
+// resubmits a write.
+export const prerender = false;
+
+import { env } from 'cloudflare:workers';
+import { getEdition, updateEntryField, moveEntry, deleteEntry, setEditionStatus } from '../../../lib/admin-db.ts';
+import { hasEditorialNote } from '../../../lib/meta.ts';
+
+const { edition } = Astro.params as { edition: string };
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const action = String(form.get('action') ?? '');
+	const slug = String(form.get('slug') ?? '');
+
+	if (action === 'update-field') {
+		const field = form.get('field');
+		if (field === 'title' || field === 'why_it_matters') {
+			await updateEntryField(env.DB, edition, slug, field, String(form.get('value') ?? ''));
+		}
+	} else if (action === 'move') {
+		const direction = form.get('direction');
+		if (direction === 'up' || direction === 'down') await moveEntry(env.DB, edition, slug, direction);
+	} else if (action === 'delete') {
+		await deleteEntry(env.DB, edition, slug);
+	} else if (action === 'set-status') {
+		const status = form.get('status');
+		if (status === 'draft' || status === 'ready') {
+			const result = await setEditionStatus(env.DB, edition, status);
+			if (!result.ok) {
+				return Astro.redirect(`/admin/${edition}/?blocked=${result.pending.join(',')}`, 303);
+			}
+		}
+	}
+	return Astro.redirect(`/admin/${edition}/`, 303);
+}
+
+const data = await getEdition(env.DB, edition);
+if (!data) return new Response('No such edition', { status: 404 });
+
+const blocked = new Set((Astro.url.searchParams.get('blocked') ?? '').split(',').filter(Boolean));
+
+const num = (n: number | null) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
+const metricFor = (e: (typeof data.entries)[number]) =>
+	typeof e.stars_delta_7d === 'number'
+		? `${e.stars_delta_7d >= 0 ? '+' : ''}${num(e.stars_delta_7d)}/wk`
+		: typeof e.stars_per_day === 'number'
+			? `${e.stars_per_day.toFixed(1)}/day`
+			: `${num(e.stars)} stars`;
+
+// Same thresholds scripts/review.js used to flag with - a sentence and a
+// half to five sentences, roughly.
+const BLURB_MIN = 120;
+const BLURB_MAX = 560;
+---
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>{edition} — admin</title>
+	<style>
+		body { font: 15px/1.5 -apple-system, system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+		.notice { background: #fff7e6; border: 1px solid #e8c877; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		.error { background: #fde8e8; border: 1px solid #e39a9a; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		.top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+		.status { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 12px; font-weight: 600; }
+		.status.ready { background: #e3f5e6; color: #1a7431; }
+		.status.draft { background: #eee; color: #555; }
+		.entry { border: 1px solid #e5e5e5; border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 0.75rem; }
+		.entry.is-pending { border-color: #e8c877; }
+		.entry-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; }
+		.entry-head .repo { font-weight: 600; }
+		.entry-head .metric { color: #555; font-size: 13px; }
+		.rank-controls { display: inline-flex; gap: 0.25rem; margin-right: 0.5rem; }
+		.rank-controls button { font-size: 11px; padding: 0.1rem 0.35rem; }
+		label { display: block; font-size: 12px; color: #555; margin: 0.5rem 0 0.15rem; }
+		input[type="text"], textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 0.4rem 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+		textarea { min-height: 4.5rem; resize: vertical; }
+		.field-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+		.field-row form { flex: 1; }
+		.charcount { font-size: 11px; color: #888; }
+		.charcount.warn { color: #b45309; }
+		.row-actions { margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center; }
+		button, .btn { font-size: 13px; cursor: pointer; }
+		.danger { color: #b91c1c; }
+		fieldset { border: none; padding: 0; margin: 2rem 0 0; }
+	</style>
+</head>
+<body>
+	<p><a href="/admin/">&larr; all editions</a></p>
+	<div class="top">
+		<h1>{edition}</h1>
+		<span class={`status ${data.status}`}>{data.status}</span>
+	</div>
+	<p class="notice">
+		Edits save to D1 immediately. The public site does not change until
+		someone runs <code>npm run deploy</code>.
+	</p>
+
+	{blocked.size > 0 && (
+		<p class="error">
+			Can't mark ready - still pending: {[...blocked].join(', ')}
+		</p>
+	)}
+
+	{data.entries.map((e, i) => {
+		const pending = !hasEditorialNote(e.why_it_matters ?? undefined);
+		const len = (e.why_it_matters ?? '').length;
+		const lenWarn = pending || len < BLURB_MIN || len > BLURB_MAX;
+		return (
+			<div class={`entry ${pending ? 'is-pending' : ''}`}>
+				<div class="entry-head">
+					<span>
+						<span class="rank-controls">
+							<form method="POST" style="display:inline">
+								<input type="hidden" name="action" value="move" />
+								<input type="hidden" name="slug" value={e.slug} />
+								<input type="hidden" name="direction" value="up" />
+								<button type="submit" disabled={i === 0} aria-label="Move up">&uarr;</button>
+							</form>
+							<form method="POST" style="display:inline">
+								<input type="hidden" name="action" value="move" />
+								<input type="hidden" name="slug" value={e.slug} />
+								<input type="hidden" name="direction" value="down" />
+								<button type="submit" disabled={i === data.entries.length - 1} aria-label="Move down">&darr;</button>
+							</form>
+						</span>
+						{e.rank}. <span class="repo">{e.slug}</span>
+					</span>
+					<span class="metric">{metricFor(e)} · score {e.interest_score ?? '—'}</span>
+				</div>
+
+				<div class="field-row">
+					<form method="POST">
+						<input type="hidden" name="action" value="update-field" />
+						<input type="hidden" name="slug" value={e.slug} />
+						<input type="hidden" name="field" value="title" />
+						<label for={`title-${e.slug}`}>Title</label>
+						<input type="text" id={`title-${e.slug}`} name="value" value={e.title ?? ''} />
+						<div class="row-actions"><button type="submit">Save title</button></div>
+					</form>
+				</div>
+
+				<div class="field-row">
+					<form method="POST">
+						<input type="hidden" name="action" value="update-field" />
+						<input type="hidden" name="slug" value={e.slug} />
+						<input type="hidden" name="field" value="why_it_matters" />
+						<label for={`why-${e.slug}`}>
+							Why it matters
+							<span class={`charcount ${lenWarn ? 'warn' : ''}`}>
+								{pending ? ' — no editorial note yet' : ` — ${len} chars`}
+							</span>
+						</label>
+						<textarea id={`why-${e.slug}`} name="value">{e.why_it_matters ?? ''}</textarea>
+						<div class="row-actions"><button type="submit">Save note</button></div>
+					</form>
+				</div>
+
+				<form method="POST" class="row-actions" onsubmit={`return confirm('Drop ${e.slug} from this edition?')`}>
+					<input type="hidden" name="action" value="delete" />
+					<input type="hidden" name="slug" value={e.slug} />
+					<button type="submit" class="danger">Drop this entry</button>
+				</form>
+			</div>
+		);
+	})}
+
+	<fieldset>
+		<legend>Publishing gate</legend>
+		<p>
+			Status is <strong>{data.status}</strong>. Only <code>ready</code> editions
+			are read by the build - see src/lib/edition-data.ts.
+		</p>
+		<form method="POST" style="display:inline">
+			<input type="hidden" name="action" value="set-status" />
+			<input type="hidden" name="status" value={data.status === 'ready' ? 'draft' : 'ready'} />
+			<button type="submit">
+				{data.status === 'ready' ? 'Revert to draft' : 'Mark ready'}
+			</button>
+		</form>
+	</fieldset>
+
+	<fieldset>
+		<legend>X</legend>
+		<p><a href={`/admin/${edition}/post/`}>Draft and post to @forktimeshq &rarr;</a></p>
+	</fieldset>
+</body>
+</html>

@@ -1,0 +1,811 @@
+@import url("https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+/* ═══════════════════════════════════════════════════════════════
+   The Fork Times — Almanac
+   ───────────────────────────────────────────────────────────────
+   A register of record rather than a daily paper. The form is
+   entry-per-project, which is why one idea carries an edition, a
+   repo page and the alternatives directory without three treatments.
+
+   Two rules hold the register together and are easy to lose:
+
+   1. Figures are set with old-style numerals. The headline on every
+      surface is a number, and old-style figures sit IN the text
+      instead of shouting over it. `font-variant-numeric` is declared
+      on the root and only overridden where a number must align in a
+      column (tabular-nums).
+   2. Rank uses Roman numerals, from a counter rather than markup, so
+      the register renumbers itself when entries are filtered out.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Day register — cool grey-green stock, deliberately not warm cream */
+  --bg-page:       #dedcd1;
+  --bg-sheet:      #ecebe3;
+  --bg-sheet-alt:  #e6e5db;
+  --bg-well:       #e2e2d8;
+
+  --ink:           #232820;
+  --ink-soft:      #34392f;
+  --ink-muted:     #4f5449;
+  --ink-faint:     #6d7268;
+  --ink-invert:    #ecebe3;
+
+  --rule:          #232820;
+  --rule-soft:     #c3c6ba;
+  --rule-hair:     #d5d8cd;
+
+  --accent:        #2f5d3f;
+  --accent-deep:   #1f4029;
+  --accent-soft:   rgba(47, 93, 63, 0.09);
+
+  --shadow-sheet:  0 1px 2px rgba(35, 40, 32, 0.05), 0 20px 44px -24px rgba(35, 40, 32, 0.32);
+  --bg-selection:  rgba(47, 93, 63, 0.18);
+
+  --font-display:  "Crimson Pro", Georgia, "Times New Roman", serif;
+  --font-body:     "Crimson Pro", Georgia, "Times New Roman", serif;
+  --font-label:    "IBM Plex Sans Condensed", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:     "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --sheet-max:     1180px;
+  --sheet-pad:     clamp(1.15rem, 3vw, 2.9rem);
+  --measure:       66ch;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  /* Night register — the stock goes to ink, the ink to stock */
+  --bg-page:       #12150f;
+  --bg-sheet:      #1b1f17;
+  --bg-sheet-alt:  #21261d;
+  --bg-well:       #262c21;
+
+  --ink:           #dfe2d6;
+  --ink-soft:      #c8ccbe;
+  --ink-muted:     #a3a897;
+  --ink-faint:     #858b79;
+  --ink-invert:    #1b1f17;
+
+  --rule:          #dfe2d6;
+  --rule-soft:     #3b4234;
+  --rule-hair:     #2d3327;
+
+  --accent:        #8cbf9b;
+  --accent-deep:   #a9d3b5;
+  --accent-soft:   rgba(140, 191, 155, 0.12);
+
+  --shadow-sheet:  0 1px 2px rgba(0, 0, 0, 0.4), 0 20px 44px -24px rgba(0, 0, 0, 0.7);
+  --bg-selection:  rgba(140, 191, 155, 0.22);
+
+  color-scheme: dark;
+}
+
+/* ─── base ─────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.62;
+  /* The register's defining typographic choice. */
+  font-variant-numeric: oldstyle-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--bg-selection); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
+
+img { max-width: 100%; height: auto; }
+
+/* Small-caps label, used for every piece of apparatus in the register:
+   beats, entry numbers, field names, colophon lines. */
+%label, .label {
+  font-family: var(--font-label);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-variant-numeric: normal;
+}
+
+/* Double rule — the register's section divider. */
+%rule-double { border-top: 3px double var(--rule); }
+
+/* ─── page frame ───────────────────────────────────────────── */
+
+.page-container {
+  max-width: var(--sheet-max);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 2rem) clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.newspaper-sheet {
+  background: var(--bg-sheet);
+  box-shadow: var(--shadow-sheet);
+  padding: var(--sheet-pad);
+}
+
+/* ─── masthead ─────────────────────────────────────────────── */
+
+.masthead { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.masthead-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  @extend %label;
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+
+.masthead-eyebrow-left,
+.masthead-eyebrow-right { display: flex; align-items: center; gap: 0.5rem; }
+.masthead-eyebrow-center-group { display: flex; align-items: center; gap: 0.7rem; }
+.masthead-eyebrow-center { font-style: normal; }
+.masthead-eyebrow-sep { color: var(--rule-soft); }
+
+.masthead-eyebrow-link,
+.masthead-archive-link {
+  color: var(--ink-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.masthead-eyebrow-link:hover,
+.masthead-archive-link:hover { color: var(--accent); text-decoration: none; }
+
+.masthead-rule-thick { @extend %rule-double; margin: 0; }
+
+.masthead-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.3rem, 7vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: 0.015em;
+  text-align: center;
+  margin: 0.15rem 0 0;
+}
+
+.masthead-tagline {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0;
+
+  /* Hairlines either side of the tagline, drawn rather than bordered
+     so they stretch to fill whatever the text leaves. */
+  &::before, &::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  span, em {
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+}
+
+.masthead-cat { @extend %label; font-weight: 500; color: var(--ink-faint); }
+.masthead-cat--left { text-align: left; }
+.masthead-cat--right { text-align: right; }
+
+.masthead-nav-btn {
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 0;
+
+  &:hover { color: var(--accent); }
+  &[disabled] { opacity: 0.3; cursor: default; }
+}
+
+/* ─── beat rail (filters) ──────────────────────────────────── */
+
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  margin-top: 1.1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.filter-group { display: flex; align-items: baseline; gap: 0.75rem; position: relative; }
+
+.filter-label {
+  @extend %label;
+  font-weight: 500;
+  color: var(--ink-faint);
+
+  &::after { content: ""; }
+}
+
+.filter-options { display: flex; gap: 1.15rem; }
+
+.filter-btn {
+  @extend %label;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 0.2rem;
+  color: var(--ink-faint);
+  cursor: pointer;
+
+  &:hover { color: var(--ink); }
+  &.active { color: var(--accent); border-bottom-color: var(--accent); }
+}
+
+/* The mobile trigger replaces the option row below the breakpoint. */
+.filter-mobile-trigger {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 1px solid var(--rule-soft);
+  padding: 0.3rem 0.55rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.filter-trigger-icon, .filter-chevron-icon { flex-shrink: 0; }
+.filter-trigger-text { @extend %label; }
+
+/* ─── the register ─────────────────────────────────────────── */
+
+.newspaper-columns {
+  /* Roman numerals come from a counter so filtering renumbers the
+     register instead of leaving gaps. */
+  counter-reset: entry;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2.4rem;
+  margin-top: 1.4rem;
+}
+
+article[data-source] {
+  counter-increment: entry;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+  min-width: 0;
+
+  &[data-hidden] { display: none; }
+
+  /* The lead entry takes the full measure, with a longer blurb — the
+     editorial claim is the product, so the lead earns room to make one. */
+  &.is-lead {
+    grid-column: 1 / -1;
+    padding: 1.3rem 0 1.5rem;
+    border-bottom: 3px double var(--rule);
+    gap: 0.7rem;
+  }
+
+  &.is-feature { grid-column: 1 / -1; }
+}
+
+.story-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.32rem;
+  line-height: 1.14;
+  margin: 0;
+  letter-spacing: 0.005em;
+
+  /* The entry number sits inline with the headline, in the apparatus
+     face, so it reads as a register mark rather than a heading. */
+  &::before {
+    content: counter(entry, upper-roman) "\00a0\00a0";
+    font-family: var(--font-label);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+    vertical-align: 0.22em;
+  }
+
+  a { color: inherit; }
+  a:hover { color: var(--accent); text-decoration: none; }
+
+  .is-lead & { font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.07; }
+}
+
+.story-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  @extend %label;
+  font-weight: 500;
+  color: var(--accent);
+
+  /* The headline figure is the one number allowed to be loud. */
+  .is-lead & {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: oldstyle-nums;
+    font-style: italic;
+  }
+}
+
+.story-source-link { color: var(--ink-faint); }
+.story-source-link:hover { color: var(--accent); text-decoration: none; }
+.story-source-sep { color: var(--rule-soft); }
+
+.story-body {
+  font-size: 0.98rem;
+  line-height: 1.58;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+
+  p { margin: 0 0 0.6rem; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    font-variant-numeric: normal;
+    background: var(--bg-well);
+    padding: 0.05em 0.3em;
+  }
+
+  .is-lead & { font-size: 1.06rem; line-height: 1.62; }
+}
+
+.story-image-wrapper { margin: 0.4rem 0 0; }
+.story-featured-image {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  cursor: zoom-in;
+  filter: grayscale(0.15);
+}
+.story-featured-image.loading { opacity: 0; }
+.story-image-wrapper.is-loading { min-height: 6rem; background: var(--bg-sheet-alt); }
+
+/* The "why it matters" note, revealed from the apparatus line. */
+.why-info { position: relative; display: inline-flex; align-items: center; cursor: help; }
+.why-info-icon { color: var(--ink-faint); }
+.why-info:hover .why-info-icon { color: var(--accent); }
+
+.why-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(30rem, 78vw);
+  background: var(--bg-sheet);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-sheet);
+  padding: 0.75rem 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.14s ease;
+  z-index: 40;
+
+  strong { color: var(--ink); }
+}
+.why-info:hover .why-tooltip,
+.why-info:focus .why-tooltip,
+.why-info:focus-within .why-tooltip { opacity: 1; visibility: visible; }
+
+/* ─── colophon ─────────────────────────────────────────────── */
+
+.edition-colophon {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 3px double var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.edition-delay-note {
+  @extend %label;
+  font-weight: 400;
+  font-size: 0.55rem;
+  color: var(--ink-faint);
+  margin: 0;
+  max-width: 44rem;
+  letter-spacing: 0.14em;
+}
+
+.colophon-row {
+  font-style: italic;
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+
+  &:not(:first-child) {
+    @extend %label;
+    font-style: normal;
+    font-weight: 400;
+    color: var(--ink-faint);
+  }
+}
+
+.colophon-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1.1rem; }
+
+/* ─── archive ──────────────────────────────────────────────── */
+
+.archive-page { display: flex; flex-direction: column; gap: 1.2rem; }
+.archive-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; }
+.archive-title-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.archive-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  line-height: 1.05;
+  margin: 0;
+}
+
+.archive-count, .archive-note { @extend %label; font-weight: 400; color: var(--ink-faint); }
+.archive-actions-group { display: flex; gap: 1rem; }
+.archive-latest-link { @extend %label; color: var(--accent); }
+.archive-rule-thin { border: none; border-top: 1px solid var(--rule-soft); margin: 0; }
+
+.archive-list { list-style: none; margin: 0; padding: 0; }
+
+.archive-item {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+
+.archive-item-num { @extend %label; color: var(--ink-faint); min-width: 3.2rem; }
+.archive-item-title { font-family: var(--font-display); font-size: 1.12rem; font-weight: 600; flex-grow: 1; }
+.archive-item-meta { @extend %label; font-weight: 400; color: var(--ink-faint); }
+
+.empty-state { text-align: center; padding: 4rem 1rem; }
+.empty-state-title { font-family: var(--font-display); font-size: 1.6rem; margin: 0 0 0.5rem; }
+.empty-state-desc { color: var(--ink-muted); font-size: 0.95rem; }
+
+/* ─── repo, industry and alternatives pages ────────────────── */
+
+.repo-sheet { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.repo-header { display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 3px double var(--rule); }
+
+.repo-eyebrow {
+  @extend %label;
+  font-weight: 500;
+  color: var(--ink-faint);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+
+  a { color: var(--ink-faint); }
+  a:hover { color: var(--accent); text-decoration: none; }
+}
+
+.repo-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5.5vw, 3rem);
+  line-height: 1.05;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.repo-headline-metric { font-style: italic; font-size: 1.05rem; color: var(--accent); margin: 0; }
+.repo-alternative { font-size: 0.95rem; color: var(--ink-muted); margin: 0; }
+
+.repo-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 1rem 1.4rem;
+  margin: 0;
+  padding: 1rem 0;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+
+  div { min-width: 0; }
+  dt { @extend %label; font-weight: 400; color: var(--ink-faint); margin-bottom: 0.15rem; }
+  dd {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    margin: 0;
+    /* Aligned in a band, so these are the exception to old-style. */
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Star history is drawn as a hairline engraving, not a WebGL plot —
+   it suits the register, and it keeps three.js off the page. */
+.star-graph { margin: 0; }
+.star-graph-canvas { width: 100%; height: 190px; }
+.star-graph-caption, .star-graph-empty {
+  @extend %label;
+  font-weight: 400;
+  color: var(--ink-faint);
+  margin: 0.35rem 0 0;
+}
+.star-graph-empty { font-style: normal; }
+
+.repo-section-title {
+  @extend %label;
+  color: var(--accent);
+  margin: 1.2rem 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+
+  &::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--rule-soft); }
+}
+
+.repo-why p { font-size: 1.04rem; line-height: 1.62; margin: 0; color: var(--ink-soft); }
+.repo-links { font-size: 0.92rem; margin: 0.4rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.repo-appearances ul, .repo-list { list-style: none; margin: 0; padding: 0; }
+
+.repo-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+
+.repo-list-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
+.repo-list-meta { @extend %label; font-weight: 400; color: var(--ink-faint); }
+.repo-list-alt { font-style: italic; font-size: 0.92rem; color: var(--ink-muted); flex-basis: 100%; }
+
+.industry-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.3rem;
+  margin-bottom: 1.2rem;
+
+  a { @extend %label; font-weight: 500; color: var(--ink-faint); }
+  a:hover { color: var(--accent); text-decoration: none; }
+  a.is-current { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 0.15rem; }
+}
+
+.industry-group { margin-bottom: 1.4rem; }
+
+.alternatives-grid { columns: 3; column-gap: 2.2rem; }
+.alternative-card { break-inside: avoid; margin-bottom: 1.5rem; scroll-margin-top: 1.5rem; }
+.alternative-product {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+.alternatives-detail { display: flex; flex-direction: column; gap: 1rem; }
+
+/* READMEs are arbitrary third-party markup: boxed in so a wide table
+   or an oversized image cannot break the sheet. */
+.repo-readme-body {
+  font-size: 0.97rem;
+  line-height: 1.62;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+
+  h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.18; margin: 1.5rem 0 0.6rem; color: var(--ink); }
+  h1 { font-size: 1.5rem; } h2 { font-size: 1.28rem; } h3 { font-size: 1.1rem; }
+  img, video { max-width: 100%; height: auto; }
+  pre {
+    overflow-x: auto;
+    padding: 0.85rem 1rem;
+    background: var(--bg-well);
+    border-left: 3px solid var(--accent);
+    font-size: 0.82rem;
+    font-variant-numeric: normal;
+  }
+  code { font-family: var(--font-mono); font-size: 0.86em; font-variant-numeric: normal; }
+  table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid var(--rule-hair); padding: 0.35rem 0.55rem; }
+  blockquote { margin: 0.9rem 0; padding-left: 0.9rem; border-left: 2px solid var(--rule-soft); color: var(--ink-muted); }
+}
+.repo-readme-source { @extend %label; font-weight: 400; color: var(--ink-faint); margin-top: 1rem; }
+
+/* ─── image modal ──────────────────────────────────────────── */
+
+.image-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 21, 15, 0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 100;
+
+  &[aria-hidden="false"] { display: flex; }
+}
+.image-modal-img { max-width: 100%; max-height: 90vh; }
+.image-modal-close {
+  position: absolute;
+  top: 1rem; right: 1.4rem;
+  background: none; border: none;
+  color: var(--bg-sheet);
+  font-size: 2rem; line-height: 1; cursor: pointer;
+}
+
+/* ─── theme toggle, install banner ─────────────────────────── */
+
+.theme-toggle-icon { color: var(--ink-faint); }
+.theme-toggle-icon:hover { color: var(--accent); }
+[data-theme="dark"] .theme-toggle-icon .sun { display: inline-block; }
+[data-theme="dark"] .theme-toggle-icon .moon { display: none; }
+.theme-toggle-icon .sun { display: none; }
+
+.pwa-banner {
+  position: fixed;
+  left: 50%; bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(30rem, calc(100vw - 2rem));
+  background: var(--bg-sheet);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-sheet);
+  padding: 0.9rem 1rem;
+  z-index: 60;
+}
+.pwa-banner-content { display: flex; align-items: flex-start; gap: 0.8rem; }
+.pwa-banner-icon { flex-shrink: 0; }
+.pwa-banner-info { flex-grow: 1; min-width: 0; }
+.pwa-banner-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+.pwa-banner-desc { font-size: 0.88rem; color: var(--ink-muted); }
+.pwa-banner-text { display: flex; flex-direction: column; gap: 0.15rem; }
+.pwa-banner-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.pwa-action-btn {
+  @extend %label;
+  background: var(--accent);
+  color: var(--ink-invert);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+.pwa-close-btn { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 1.2rem; line-height: 1; }
+
+/* ─── responsive ───────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .alternatives-grid { columns: 2; }
+}
+
+@media (max-width: 720px) {
+  body { font-size: 16px; }
+
+  .newspaper-columns { grid-template-columns: 1fr; gap: 0; }
+  article[data-source].is-lead { padding-top: 0.9rem; }
+
+  .alternatives-grid { columns: 1; }
+  .repo-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .star-graph-canvas { height: 150px; }
+
+  .masthead-eyebrow { font-size: 0.55rem; }
+  .masthead-cat { display: none; }
+
+  /* The beat rail collapses to a scrolling row rather than a dropdown:
+     the beats are the site's spine and hiding them behind a control
+     buries them. */
+  .filter-bar {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 1.4rem;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+  .filter-group { flex-shrink: 0; }
+  .filter-label { display: none; }
+}
+
+@media print {
+  body { background: #fff; }
+  .newspaper-sheet { box-shadow: none; }
+  .filter-bar, .pwa-banner, .masthead-nav-btn, .theme-toggle-icon { display: none; }
+}
+
+/* ─── subscription ─────────────────────────────────────────── */
+
+.subscribe {
+  margin: 1.8rem 0;
+  padding: 1.3rem 1.5rem;
+  background: var(--bg-sheet-alt);
+  border-top: 3px double var(--rule);
+  border-bottom: 3px double var(--rule);
+}
+
+.subscribe-pitch {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1.5;
+  margin: 0 0 0.9rem;
+  max-width: 46ch;
+}
+
+.subscribe-label {
+  @extend %label;
+  font-weight: 400;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.subscribe-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.subscribe-input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--bg-sheet);
+  color: var(--ink);
+  border: 1px solid var(--rule-soft);
+
+  &::placeholder { color: var(--ink-faint); }
+  &:focus { outline: 2px solid var(--accent); outline-offset: -2px; border-color: var(--accent); }
+}
+
+.subscribe-btn {
+  @extend %label;
+  background: var(--accent);
+  color: var(--ink-invert);
+  border: 1px solid var(--accent);
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+
+  &:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+  &[disabled] { opacity: 0.55; cursor: default; }
+}
+
+/* Off-screen rather than display:none — a bot reading the DOM fills anything
+   it can see in the markup, and some skip hidden fields. */
+.subscribe-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.subscribe-status {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  margin: 0.55rem 0 0;
+  min-height: 1.2em;
+  color: var(--ink-muted);
+
+  &[data-state='ok'] { color: var(--accent); }
+  &[data-state='error'] { color: var(--ink); font-style: italic; }
+}

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# /md and /json are the latest edition re-serialised for machine consumers.
+# They duplicate the front page's content wholesale, so they are kept out of
+# the crawl rather than competing with it.
+Disallow: /md
+Disallow: /json
+
+Sitemap: https://theforktimes.com/sitemap-index.xml

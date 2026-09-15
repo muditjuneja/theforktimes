@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #2f5d3f; text-decoration: none; }
+    a:hover { color: #1f4029; }
+    .rule-double { border-top: 3px double #232820; }
+    .label { font-family: 'IBM Plex Sans Condensed', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.20em; text-transform: uppercase; }
+  </style>
+</helmet>
+
+<div style="width: 860px; height: 1240px; box-sizing: border-box; background: #ecebe3; color: #232820; font-family: 'Crimson Pro', Georgia, serif; font-variant-numeric: oldstyle-nums; padding: 40px 46px; display: flex; flex-direction: column; gap: 22px;">
+
+  <!-- masthead -->
+  <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+    <div style="display: flex; justify-content: space-between; width: 100%; align-items: baseline;">
+      <span class="label" style="color: #6d7268;">&larr; Archive</span>
+      <span class="label" style="color: #6d7268;">No. XIV &nbsp;&middot;&nbsp; 14 September 2026</span>
+      <span class="label" style="color: #6d7268;">Alternatives &rarr;</span>
+    </div>
+    <div style="width: 100%;" class="rule-double"></div>
+    <div style="font-size: 60px; font-weight: 600; letter-spacing: 0.015em; line-height: 1.02; padding-top: 6px;">The Fork Times</div>
+    <div style="display: flex; align-items: center; gap: 14px; width: 100%;">
+      <span style="flex-grow: 1; height: 1px; background: #232820;"></span>
+      <span style="font-style: italic; font-size: 15px; color: #4f5449;">Ranked by what is actually moving</span>
+      <span style="flex-grow: 1; height: 1px; background: #232820;"></span>
+    </div>
+  </div>
+
+  <!-- beat rail -->
+  <div style="display: flex; justify-content: center; gap: 22px; padding-bottom: 12px; border-bottom: 1px solid #c3c6ba;">
+    <span class="label" style="color: #2f5d3f; border-bottom: 2px solid #2f5d3f; padding-bottom: 3px;">All</span>
+    <span class="label" style="color: #6d7268;">AI &amp; ML</span>
+    <span class="label" style="color: #6d7268;">Developer Tools</span>
+    <span class="label" style="color: #6d7268;">Data</span>
+    <span class="label" style="color: #6d7268;">Infrastructure</span>
+    <span class="label" style="color: #6d7268;">Security</span>
+    <span class="label" style="color: #6d7268;">Design</span>
+  </div>
+
+  <!-- lead entry -->
+  <div style="display: flex; gap: 30px;">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 11px; min-width: 0;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span class="label" style="color: #2f5d3f;">Entry I</span>
+        <span style="flex-grow: 1; height: 1px; background: #c3c6ba;"></span>
+        <span class="label" style="color: #6d7268; font-weight: 400;">Artificial Intelligence &middot; Inference</span>
+      </div>
+      <span style="font-size: 36px; font-weight: 700; line-height: 1.08; letter-spacing: 0.005em;">ollama/ollama</span>
+      <span style="font-size: 17px; line-height: 1.62; color: #34392f;">Runs open-weight models locally, replacing a hosted API for local and offline work. The fork-to-star ratio sits near ten per cent, which for a consumer-facing tool suggests people are running it rather than bookmarking it.</span>
+      <div style="display: flex; gap: 18px; align-items: baseline;">
+        <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for OpenAI API, Anthropic API</span>
+      </div>
+    </div>
+    <div style="width: 168px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; border-left: 1px solid #c3c6ba; padding-left: 22px;">
+      <div style="display: flex; flex-direction: column; gap: 1px;">
+        <span style="font-size: 40px; font-weight: 600; color: #2f5d3f; line-height: 1;">153.9</span>
+        <span class="label" style="color: #6d7268; font-weight: 400;">stars a day</span>
+      </div>
+      <div style="height: 1px; background: #c3c6ba;"></div>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <div style="display: flex; justify-content: space-between;"><span class="label" style="color: #6d7268; font-weight: 400;">Stars</span><span style="font-size: 15px;">180,833</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="label" style="color: #6d7268; font-weight: 400;">Forks</span><span style="font-size: 15px;">17,840</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="label" style="color: #6d7268; font-weight: 400;">Ratio</span><span style="font-size: 15px;">9.9%</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="label" style="color: #6d7268; font-weight: 400;">Language</span><span style="font-size: 15px;">Go</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="label" style="color: #6d7268; font-weight: 400;">Founded</span><span style="font-size: 15px;">2023</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-double"></div>
+
+  <!-- two-column register -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 34px;">
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #d5d8cd;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">II&nbsp;&nbsp;</span>astral-sh/uv</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">83.3</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">Rust-based Python packaging; the speed gap over pip is the whole argument.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for pip, Poetry</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #d5d8cd;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">III&nbsp;&nbsp;</span>oven-sh/bun</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">48.5</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">Runtime, bundler, test runner and package manager in one binary.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for Node.js</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #d5d8cd;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">IV&nbsp;&nbsp;</span>ghostty-org/ghostty</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">37.5</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">Platform-native UI with GPU acceleration, rather than a web view in a window.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for iTerm2, Alacritty</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #d5d8cd;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">V&nbsp;&nbsp;</span>microsoft/playwright</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">38.5</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">One API across Chromium, Firefox and WebKit, with the browsers pinned per release.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for Selenium, Cypress</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">VI&nbsp;&nbsp;</span>vllm-project/vllm</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">69.8</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">Self-hosted high-throughput serving for open-weight models.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for OpenAI API</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px;">
+        <span style="font-size: 22px; font-weight: 700;"><span class="label" style="color: #6d7268;">VII&nbsp;&nbsp;</span>zed-industries/zed</span>
+        <span style="font-size: 22px; font-weight: 600; color: #2f5d3f;">44.4</span>
+      </div>
+      <span style="font-size: 15.5px; line-height: 1.55; color: #34392f;">Rust editor built on its own GPU renderer, with collaboration in the core rather than bolted on.</span>
+      <span class="label" style="color: #6d7268; font-weight: 400;">Substitute for VS Code, Sublime Text</span>
+    </div>
+
+  </div>
+
+  <!-- colophon -->
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 9px; align-items: center;">
+    <div style="width: 100%;" class="rule-double"></div>
+    <span style="font-style: italic; font-size: 13.5px; color: #4f5449; padding-top: 4px;">End of Edition &mdash; Monday, 14 September 2026</span>
+    <span class="label" style="color: #6d7268; font-weight: 400;">Front page &middot; Archive &middot; Alternatives &middot; RSS &middot; theforktimes.com</span>
+    <span class="label" style="color: #8d9188; font-weight: 400; font-size: 8px;">Editions close two days back, so star counts and Hacker News threads have time to settle</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

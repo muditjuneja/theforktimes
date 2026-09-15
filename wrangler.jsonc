@@ -1,0 +1,91 @@
+{
+  // The Fork Times - one Worker: serves the site, runs /admin, runs the
+  // ingestion crons.
+  //
+  // Workers with static assets rather than Pages (Cloudflare recommends
+  // Workers for new projects; Pages is the legacy path). Most of the site is
+  // still fully prerendered - the @astrojs/cloudflare adapter exists only so
+  // /admin/* can be server-rendered against D1. `main` points at our own
+  // worker/index.js (not an Astro-generated entrypoint) so it can own
+  // `fetch` for /subscribe and /run and delegate everything else - static
+  // assets and /admin - to the adapter's handle(). `wrangler dev`/`deploy`
+  // detect this and transparently swap in the build's own regenerated
+  // config (dist/server/wrangler.json) for the fields below that its build
+  // step computes itself (assets.directory among them) - this file is what
+  // a human edits; that one is derived from it plus the build output.
+  "name": "theforktimes",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  // Reuses scripts/lib/x.js's node:crypto HMAC-SHA1 OAuth signing and
+  // scripts/lib/shot.js's Buffer-based Kitesurf response handling unmodified
+  // in /admin/<date>/post/, rather than a second, hand-rolled implementation
+  // of security-sensitive signing code. Worker-wide (also touches /subscribe,
+  // /run and both crons, though none of them use it) - see AGENTS.md
+  // "Posting to X".
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Set to true (or remove) once the licence question in README/AGENTS.md
+  // is resolved and the site is meant to be publicly reachable. Until then
+  // this Worker exists only to run its crons against D1 - no *.workers.dev
+  // URL, no route.
+  "workers_dev": false,
+
+  "assets": {
+    // The adapter's build splits output into dist/client (static) and
+    // dist/server (the SSR worker for /admin); this points at the former.
+    // The build's own regenerated config computes this path itself, so it
+    // is correct there even before it is edited here.
+    "directory": "./dist/client",
+    // Astro emits directory-style routes (/2026-09-14/index.html), so
+    // requests need trailing-slash resolution to find them.
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "binding": "ASSETS"
+  },
+
+  // Crawl nightly, publish weekly. The nightly snapshot cannot be skipped:
+  // GitHub exposes only *current* star counts, so a night without a row in
+  // repo_snapshots is a permanent hole no backfill can reconstruct.
+  "triggers": {
+    "crons": [
+      "0 3 * * *",
+      "0 12 * * 2"
+    ]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "forktimes",
+      "database_id": "REPLACE_WITH_DATABASE_ID"
+    }
+  ],
+
+  "observability": { "enabled": true }
+
+  // Secrets (wrangler secret put <NAME>, never committed):
+  //   ADMIN_PASSWORD          - /admin/* login (src/middleware.ts); required, fails closed if unset
+  //   ADMIN_SESSION_SECRET    - signs the /admin session cookie (src/lib/admin-auth.ts); required, fails closed if unset
+  //   GITHUB_TOKEN            - PAT with public_repo; without it the crawl records nothing
+  //   XMIT_API_KEY            - Transmit API key (xmit_live_...) for /subscribe
+  //   XMIT_LIST_ID            - the Transmit list new subscribers join
+  //   OPENROUTER_API_KEY      - drafts blurbs (blurbs.js) and X posts (/admin/<date>/post/, tweet.js)
+  //   X_API_KEY               - OAuth 1.0a consumer key, posting as @forktimeshq
+  //   X_API_SECRET            - OAuth 1.0a consumer secret
+  //   X_ACCESS_TOKEN          - OAuth 1.0a access token
+  //   X_ACCESS_TOKEN_SECRET   - OAuth 1.0a access token secret
+  //   CLOUDFLARE_ACCOUNT_ID   - Kitesurf (Browser Run) card rendering; missing means no image, not a silent downgrade
+  //   CLOUDFLARE_API_TOKEN    - paired with the above
+  //
+  // Local dev reads these from a `.dev.vars` file at the project root
+  // (wrangler/@cloudflare/vite-plugin's convention) instead - gitignored,
+  // never the real values in a shared file.
+  //
+  // No DEPLOY_HOOK_URL: publishing is a human running `npm run deploy`, never
+  // automatic. The weekly cron writes a *draft* edition and stops - see
+  // "editions" in schema.sql and worker/index.js's weeklyEdition().
+  //
+  // Requires Workers Paid. The free plan's 10ms CPU and 50 subrequests per
+  // invocation cannot complete a crawl of any size; paid gives 15 min of wall
+  // time on a >=1h cron and 10,000 subrequests.
+}

@@ -1,0 +1,76 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ThemeToggleButton from '../../components/ThemeToggleButton.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_METADATA } from '../../config';
+import { breadcrumbs, collectionPage } from '../../lib/schema';
+import { allEditions } from '../../lib/editions';
+
+// Newest first: the archive is read backwards from the current edition.
+const editions = [...(await allEditions())].reverse();
+const latest = editions[0];
+
+const pageTitle = `Archive | ${SITE_METADATA.name}`;
+const pageDescription = editions.length
+	? `Every edition of ${SITE_METADATA.name} — ${editions.length} ${editions.length === 1 ? 'issue' : 'issues'} ranking open source projects by star velocity, newest first.`
+	: `Past editions of ${SITE_METADATA.name}, ranking open source projects by star velocity.`;
+
+const jsonLd = [
+	collectionPage({
+		path: '/archive/',
+		name: pageTitle,
+		description: pageDescription,
+		itemListName: `${SITE_METADATA.name} editions`,
+		items: editions.map((e) => ({ name: e.label, path: `/${e.day}/` })),
+	}),
+	breadcrumbs([{ name: 'Archive', path: '/archive/' }]),
+];
+---
+
+<Layout title={pageTitle} description={pageDescription} jsonLd={jsonLd}>
+	<main class="page-container">
+		<article class="newspaper-sheet archive-page">
+			<header class="archive-header">
+				<div class="archive-title-group">
+					<h1 class="archive-heading">Archive</h1>
+					<span class="archive-count">
+						{editions.length} {editions.length === 1 ? 'edition' : 'editions'} on record
+					</span>
+				</div>
+				<div class="archive-actions-group">
+					{latest && <a class="archive-latest-link" href={`/${latest.day}/`}>Current edition &rsaquo;</a>}
+					<ThemeToggleButton />
+				</div>
+			</header>
+
+			<hr class="archive-rule-thin" />
+
+			<p class="archive-note">
+				Editions close two days back, so star counts and Hacker News threads have time to settle.
+			</p>
+
+			{editions.length === 0 ? (
+				<div class="empty-state">
+					<p class="empty-state-title">No editions on record</p>
+					<p class="empty-state-desc">
+						Run <code>npm run ingest</code> to set the first one.
+					</p>
+				</div>
+			) : (
+				<ul class="archive-list">
+					{editions.map(({ day, count, issue, label }) => (
+						<li>
+							<a class="archive-item" href={`/${day}/`}>
+								<span class="archive-item-num">No. {issue}</span>
+								<span class="archive-item-title">{label}</span>
+								<span class="archive-item-meta">{count} {count === 1 ? 'entry' : 'entries'}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)}
+
+			<Footer />
+		</article>
+	</main>
+</Layout>

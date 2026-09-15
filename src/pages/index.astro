@@ -1,0 +1,12 @@
+---
+import EditionPage from '../components/EditionPage.astro';
+import { allEditions, editionProps } from '../lib/editions';
+
+const editions = await allEditions();
+if (editions.length === 0) return Astro.redirect('/archive/');
+
+// The front page is always the newest edition.
+const props = await editionProps(editions[editions.length - 1].day, { isHomepage: true });
+---
+
+<EditionPage {...props} />

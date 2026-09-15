@@ -1,0 +1,163 @@
+---
+// One page per proprietary product we claim a substitute for.
+//
+// "open source alternative to X" is the highest-intent query this site can
+// answer, and the index page answers 75 of them at once - which means it
+// ranks for none of them well. A page per product targets the actual query.
+//
+// But a page is only built where we have something to say. The gate is
+// deliberate: the competing pages for these queries (openalternative.co,
+// AlternativeTo, opensourcealternative.to) run to hundreds or thousands of
+// words per product, and shipping 75 pages that each list one bare repo slug
+// would be a thin-content footprint on a domain with no authority yet. So a
+// product gets a page when it is actually proprietary - "open source
+// alternative to pip" is not a query anyone has - and when at least one of
+// its substitutes brings either a curated note or real measurements.
+//
+// As the editorial notes in taxonomy.ts and the edition archive fill in, more
+// products clear the gate on their own. Nothing here invents copy: every
+// sentence about a project is either its curated note or a number we measured.
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import Subscribe from '../../components/Subscribe.astro';
+import { SITE_METADATA } from '../../config';
+import { INDUSTRY_LABEL, unclassifiedProducts } from '../../data/taxonomy';
+import { productPages, type Substitute } from '../../lib/alternatives';
+import { breadcrumbs, collectionPage } from '../../lib/schema';
+import { productSlug, repoPath } from '../../lib/routes';
+import { withSiteName } from '../../lib/meta';
+
+export async function getStaticPaths() {
+	const unclassified = unclassifiedProducts();
+	if (unclassified.length > 0) {
+		console.warn(
+			`[alternatives] ${unclassified.length} product(s) in CURATED are missing a ` +
+				`PRODUCTS classification, so they cannot get a page: ${unclassified.join(', ')}`
+		);
+	}
+
+	return productPages(await getCollection('repos')).map(({ product, substitutes }) => ({
+		params: { product: productSlug(product) },
+		props: { product, substitutes },
+	}));
+}
+
+const { product, substitutes } = Astro.props as { product: string; substitutes: Substitute[] };
+
+const num = (n: number) => n.toLocaleString('en-US');
+const measuredCount = substitutes.filter((s) => s.measured).length;
+const usesVelocity = substitutes.some((s) => s.starsDelta7d !== null);
+
+/** The headline number for one substitute, naming the metric it used. */
+function metricFor(s: Substitute): string | null {
+	if (s.starsDelta7d !== null) {
+		return `${s.starsDelta7d >= 0 ? '+' : ''}${num(s.starsDelta7d)} stars this week`;
+	}
+	if (s.starsPerDay !== null) return `${s.starsPerDay.toFixed(1)} stars/day since launch`;
+	if (s.stars !== null) return `${num(s.stars)} stars`;
+	return null;
+}
+
+const path = `/alternatives/${productSlug(product)}/`;
+const pageTitle = withSiteName(`Open source alternatives to ${product}`);
+
+const named = substitutes.slice(0, 3).map((s) => s.slug);
+const pageDescription =
+	`${substitutes.length} open source ${substitutes.length === 1 ? 'project' : 'projects'} ` +
+	`we claim as a substitute for ${product}` +
+	(measuredCount > 0
+		? `, ranked by ${usesVelocity ? 'star velocity' : 'stars per day since launch'}: ${named.join(', ')}.`
+		: `: ${named.join(', ')}.`);
+
+const jsonLd = [
+	collectionPage({
+		path,
+		name: pageTitle,
+		description: pageDescription,
+		itemListName: `Open source substitutes for ${product}`,
+		items: substitutes
+			.filter((s) => s.measured)
+			.map((s) => ({ name: s.slug, path: repoPath(s.slug) })),
+	}),
+	breadcrumbs([
+		{ name: 'Alternatives', path: '/alternatives/' },
+		{ name: product, path },
+	]),
+];
+---
+
+<Layout title={pageTitle} description={pageDescription} jsonLd={jsonLd}>
+	<main class="page-container">
+		<article class="newspaper-sheet repo-sheet">
+			<header class="repo-header">
+				<div class="repo-eyebrow">
+					<a class="masthead-eyebrow-link" href="/">&larr; {SITE_METADATA.name}</a>
+					<span class="story-source-sep">&middot;</span>
+					<a class="masthead-eyebrow-link" href="/alternatives/">Alternatives</a>
+				</div>
+
+				<h1 class="repo-title">Open source alternatives to {product}</h1>
+				<p class="repo-headline-metric">
+					{substitutes.length} {substitutes.length === 1 ? 'project' : 'projects'}
+					{measuredCount > 0 && <>, {measuredCount} measured</>}
+				</p>
+				<p class="repo-alternative">
+					A substitution is listed when the project genuinely replaces {product} for a
+					real use case &mdash; not merely because their feature lists overlap.
+				</p>
+			</header>
+
+			<ul class="repo-list alternatives-detail">
+				{substitutes.map((s) => (
+					<li>
+						{/* A project we claim but have not yet measured has no repo page,
+						    so it links out rather than to a 404. */}
+						{s.measured ? (
+							<a class="repo-list-name" href={repoPath(s.slug)}>{s.slug}</a>
+						) : (
+							<a class="repo-list-name" href={`https://github.com/${s.slug}`} target="_blank" rel="noopener noreferrer">{s.slug}</a>
+						)}
+						{metricFor(s) && <span class="repo-list-meta">{metricFor(s)}</span>}
+						{s.note && <span class="repo-list-alt">{s.note}</span>}
+						<span class="repo-list-meta">
+							{[
+								s.language,
+								s.industry
+									? (INDUSTRY_LABEL[s.industry as keyof typeof INDUSTRY_LABEL] ?? s.industry)
+									: null,
+								s.forkRatio !== null ? `${(s.forkRatio * 100).toFixed(1)}% fork ratio` : null,
+							]
+								.filter(Boolean)
+								.join(' · ')}
+						</span>
+						{!s.measured && (
+							<span class="repo-list-meta">
+								Not yet measured &mdash; has not appeared in an edition.
+							</span>
+						)}
+					</li>
+				))}
+			</ul>
+
+			<section class="repo-appearances">
+				<h2 class="repo-section-title">How this list is made</h2>
+				<p>
+					{product} is a commercial product, so &ldquo;what replaces it&rdquo; is a
+					question with a real answer. Every substitution here is a curated editorial claim, not a topic match: the
+					table it comes from is maintained by hand. Projects are ranked by
+					{' '}{usesVelocity ? 'star velocity - stars gained in the last seven days' : 'stars per day since launch, the fallback used until a project has two snapshots a week apart'}.
+					{measuredCount < substitutes.length && (
+						<>
+							{' '}Projects marked unmeasured are claims we stand behind but have not yet
+							put a number to, because they have not appeared in an edition.
+						</>
+					)}
+				</p>
+			</section>
+
+			<Subscribe pitch={`We track open source alternatives to ${product} and everything like it — one issue a week, on what actually moved.`} />
+			<Footer />
+		</article>
+	</main>
+</Layout>

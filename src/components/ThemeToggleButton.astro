@@ -1,0 +1,20 @@
+---
+// Day / night register. The handler lives in Layout.astro's inline script so
+// the saved choice is applied before first paint rather than after hydration.
+---
+
+<button
+	id="theme-toggle"
+	class="theme-toggle-icon"
+	type="button"
+	aria-label="Switch between the day and night register"
+	title="Day / night register"
+>
+	<svg class="moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"></path>
+	</svg>
+	<svg class="sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<circle cx="12" cy="12" r="4.2"></circle>
+		<path d="M12 2.4v2.2M12 19.4v2.2M4.2 12H2M22 12h-2.2M6.1 6.1 4.6 4.6M19.4 19.4l-1.5-1.5M17.9 6.1l1.5-1.5M4.6 19.4l1.5-1.5"></path>
+	</svg>
+</button>

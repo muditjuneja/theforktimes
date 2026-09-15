@@ -1,0 +1,129 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import Subscribe from '../../components/Subscribe.astro';
+import { SITE_METADATA } from '../../config';
+import { alternativeIndex, CURATED, isProprietary } from '../../data/taxonomy';
+import { productPages } from '../../lib/alternatives';
+import { breadcrumbs, collectionPage } from '../../lib/schema';
+import { productSlug, repoPath } from '../../lib/routes';
+
+// The curated table is the source of truth, so this page lists every claim we
+// make - including repos that have not yet appeared in an edition. Those link
+// to GitHub rather than to a repo page that does not exist yet.
+const repoEntries = await getCollection('repos');
+const covered = new Set(repoEntries.map((e) => e.data.repo.toLowerCase()));
+const index = alternativeIndex();
+
+const anchor = productSlug;
+
+// Which products have their own page, from the same function that generates
+// them - so this page can never link a route that was not built.
+const hasPage = new Set(productPages(repoEntries).map((p) => p.product));
+
+// The claim "tools engineers pay for" is only true of the proprietary half of
+// the table. Like-for-like substitutions against open source incumbents (uv
+// for pip, polars for pandas) are real editorial claims but a different kind
+// of thing, so they are listed separately rather than described as something
+// they are not.
+const entries = [...index.entries()];
+const proprietary = entries.filter(([product]) => isProprietary(product));
+const likeForLike = entries.filter(([product]) => !isProprietary(product));
+
+const pageTitle = `Open Source Alternatives | ${SITE_METADATA.name}`;
+const pageDescription = `Curated open source substitutes for ${proprietary.length} commercial developer tools, ranked by star velocity.`;
+
+const jsonLd = [
+	collectionPage({
+		path: '/alternatives/',
+		name: pageTitle,
+		description: pageDescription,
+		itemListName: 'Proprietary tools with curated open source substitutes',
+		items: [...index.keys()].map((product) => ({
+			name: product,
+			path: hasPage.has(product)
+				? `/alternatives/${anchor(product)}/`
+				: `/alternatives/#${anchor(product)}`,
+		})),
+	}),
+	breadcrumbs([{ name: 'Alternatives', path: '/alternatives/' }]),
+];
+---
+
+<Layout title={pageTitle} description={pageDescription} jsonLd={jsonLd}>
+	<main class="page-container">
+		<article class="newspaper-sheet repo-sheet">
+			<header class="repo-header">
+				<div class="repo-eyebrow"><a class="masthead-eyebrow-link" href="/">&larr; {SITE_METADATA.name}</a></div>
+				<h1 class="repo-title">Open Source Alternatives</h1>
+				<p class="repo-headline-metric">
+					{proprietary.length} commercial tools, {Object.keys(CURATED).length} projects,
+					{' '}{hasPage.size} with a page of their own
+				</p>
+				<p class="repo-alternative">
+					A substitution is listed when the project genuinely replaces the product
+					for a real use case &mdash; not merely because their feature lists overlap.
+				</p>
+			</header>
+
+			<div class="alternatives-grid">
+				{proprietary.map(([product, repos]) => (
+					<section class="alternative-card" id={anchor(product)}>
+						<h2 class="alternative-product">
+							{hasPage.has(product) ? (
+								<a href={`/alternatives/${anchor(product)}/`}>{product}</a>
+							) : (
+								product
+							)}
+						</h2>
+						<ul class="repo-list">
+							{repos.map((slug) => (
+								<li>
+									{covered.has(slug) ? (
+										<a class="repo-list-name" href={repoPath(slug)}>{slug}</a>
+									) : (
+										<a class="repo-list-name" href={`https://github.com/${slug}`} target="_blank" rel="noopener noreferrer">{slug}</a>
+									)}
+									{CURATED[slug]?.note && <span class="repo-list-alt">{CURATED[slug].note}</span>}
+								</li>
+							))}
+						</ul>
+					</section>
+				))}
+			</div>
+
+			<section class="repo-appearances">
+				<h2 class="repo-section-title">Like-for-like</h2>
+				<p>
+					These incumbents are open source themselves, so the substitution is a
+					comparison rather than an escape from a licence. They are listed because
+					the claim is still ours to make, but they do not get a page of their own:
+					nobody searches for an open source alternative to something already open
+					source.
+				</p>
+				<div class="alternatives-grid">
+					{likeForLike.map(([product, repos]) => (
+						<section class="alternative-card" id={anchor(product)}>
+							<h2 class="alternative-product">{product}</h2>
+							<ul class="repo-list">
+								{repos.map((slug) => (
+									<li>
+										{covered.has(slug) ? (
+											<a class="repo-list-name" href={repoPath(slug)}>{slug}</a>
+										) : (
+											<a class="repo-list-name" href={`https://github.com/${slug}`} target="_blank" rel="noopener noreferrer">{slug}</a>
+										)}
+										{CURATED[slug]?.note && <span class="repo-list-alt">{CURATED[slug].note}</span>}
+									</li>
+								))}
+							</ul>
+						</section>
+					))}
+				</div>
+			</section>
+			<Subscribe />
+			<Footer />
+		</article>
+	</main>
+</Layout>

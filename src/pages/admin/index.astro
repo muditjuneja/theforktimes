@@ -1,0 +1,68 @@
+---
+// The editorial review surface: every edition, its status, and how many
+// entries still need a human. All of /admin/* is gated by src/middleware.ts
+// (a password + signed cookie - see src/lib/admin-auth.ts), so this page
+// does not need its own check.
+export const prerender = false;
+
+import { env } from 'cloudflare:workers';
+import { listEditions } from '../../lib/admin-db.ts';
+
+const editions = await listEditions(env.DB);
+---
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Editions — admin</title>
+	<style>
+		body { font: 15px/1.5 -apple-system, system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+		.top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+		.top button { font-size: 13px; cursor: pointer; }
+		.notice { background: #fff7e6; border: 1px solid #e8c877; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 14px; }
+		table { width: 100%; border-collapse: collapse; }
+		th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #e5e5e5; }
+		.status { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 12px; font-weight: 600; }
+		.status.ready { background: #e3f5e6; color: #1a7431; }
+		.status.draft { background: #eee; color: #555; }
+		.pending { color: #b45309; }
+		a { color: #0b5fff; }
+	</style>
+</head>
+<body>
+	<div class="top">
+		<h1>Editions</h1>
+		<form method="POST" action="/admin/logout" style="display:inline">
+			<button type="submit">Log out</button>
+		</form>
+	</div>
+	<p class="notice">
+		Editing here changes D1 only. Nothing reaches the public site until
+		someone runs <code>npm run deploy</code>.
+	</p>
+
+	{editions.length === 0 ? (
+		<p>No editions yet - the weekly cron writes one as a draft.</p>
+	) : (
+		<table>
+			<thead>
+				<tr><th>Edition</th><th>Status</th><th>Entries</th><th>Needs a look</th></tr>
+			</thead>
+			<tbody>
+				{editions.map((e) => (
+					<tr>
+						<td><a href={`/admin/${e.edition}/`}>{e.edition}</a></td>
+						<td><span class={`status ${e.status}`}>{e.status}</span></td>
+						<td>{e.entries}</td>
+						<td class={e.pending > 0 ? 'pending' : ''}>
+							{e.pending > 0 ? `${e.pending} pending` : '—'}
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+	)}
+</body>
+</html>

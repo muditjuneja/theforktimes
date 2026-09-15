@@ -1,0 +1,322 @@
+---
+name: The Fork Times
+description: A weekly newspaper for open source, ranked by what is actually moving.
+edition: 2026-09-13
+entries: 10
+---
+
+------------------------------------------------------------------------
+
+---
+repo: ayghri/i-have-adhd
+title: "ayghri/i-have-adhd — A skill to stop your coding agent from burying the answer. ADHD-friendly…"
+url: https://github.com/ayghri/i-have-adhd
+source: hn
+date: '2026-09-13'
+section: ai
+stars: 44296
+forks: 2543
+stars_per_day: 359.72
+fork_ratio: 0.0574
+industry: ai
+ai_category: agents
+has_readme: true
+repo_created_at: '2026-05-13T20:42:06Z'
+hn_id: '49610631'
+hn_points: 538
+comments: https://news.ycombinator.com/item?id=49610631
+why_it_matters: >-
+  359.7 stars/day since launch; 5.7% fork-to-star ratio; 538 points on Hacker
+  News. Editorial note pending.
+interest_score: 10
+authors:
+  - ayghri
+---
+
+A skill to stop your coding agent from burying the answer. ADHD-friendly output.
+
+**44,296** stars · **2,543** forks · **359.7** stars/day since launch.
+
+Discussed on Hacker News at 538 points with 372 comments.
+
+------------------------------------------------------------------------
+
+---
+repo: anomalyco/opencode
+title: "anomalyco/opencode — The open source coding agent."
+url: https://github.com/anomalyco/opencode
+source: github
+date: '2026-09-13'
+section: ai
+stars: 207130
+forks: 27142
+stars_per_day: 413.30
+fork_ratio: 0.1310
+industry: ai
+ai_category: agents
+alternative_to:
+  - GitHub Copilot
+  - Cursor
+has_readme: true
+repo_created_at: '2025-04-30T20:08:00Z'
+why_it_matters: >-
+  413.3 stars/day since launch; 13.1% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 8
+authors:
+  - anomalyco
+---
+
+The open source coding agent.
+
+**207,130** stars · **27,142** forks · **413.3** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: ollama/ollama
+title: "ollama/ollama — Get up and running with Kimi-K2.6, GLM-5.2, MiniMax, DeepSeek, gpt-oss, Qwen…"
+url: https://github.com/ollama/ollama
+source: github
+date: '2026-09-13'
+section: ai
+stars: 180833
+forks: 17840
+stars_per_day: 153.88
+fork_ratio: 0.0987
+industry: ai
+ai_category: inference
+alternative_to:
+  - OpenAI API
+  - Anthropic API
+has_readme: true
+repo_created_at: '2023-06-26T19:39:32Z'
+why_it_matters: >-
+  153.9 stars/day since launch; 9.9% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 7
+authors:
+  - ollama
+---
+
+Get up and running with Kimi-K2.6, GLM-5.2, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models.
+
+**180,833** stars · **17,840** forks · **153.9** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: astral-sh/uv
+title: "astral-sh/uv — An extremely fast Python package and project manager, written in Rust."
+url: https://github.com/astral-sh/uv
+source: github
+date: '2026-09-13'
+section: devtools
+stars: 89784
+forks: 3577
+stars_per_day: 83.35
+fork_ratio: 0.0398
+industry: devtools
+alternative_to:
+  - pip
+  - Poetry
+has_readme: true
+repo_created_at: '2023-10-02T20:24:11Z'
+why_it_matters: >-
+  83.4 stars/day since launch; 4.0% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 7
+authors:
+  - astral-sh
+---
+
+An extremely fast Python package and project manager, written in Rust.
+
+**89,784** stars · **3,577** forks · **83.4** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: Sadpainy/Stuxnet
+title: "Sadpainy/Stuxnet — Stuxnet, Here reproduced by me, Only researchs for educations purposes. It…"
+url: https://github.com/Sadpainy/Stuxnet
+source: hn
+date: '2026-09-13'
+section: devtools
+stars: 482
+forks: 89
+stars_per_day: 68.65
+fork_ratio: 0.1846
+industry: devtools
+has_readme: true
+repo_created_at: '2026-09-06T23:32:39Z'
+hn_id: '49603546'
+hn_points: 178
+comments: https://news.ycombinator.com/item?id=49603546
+why_it_matters: >-
+  68.7 stars/day since launch; 18.5% fork-to-star ratio; 178 points on Hacker
+  News. Editorial note pending.
+interest_score: 7
+authors:
+  - Sadpainy
+---
+
+Stuxnet, Here reproduced by me, Only researchs for educations purposes. It set work on Windows XP and Windows 7 only.
+
+**482** stars · **89** forks · **68.7** stars/day since launch.
+
+Discussed on Hacker News at 178 points with 51 comments.
+
+------------------------------------------------------------------------
+
+---
+repo: vllm-project/vllm
+title: "vllm-project/vllm — A high-throughput and memory-efficient inference and serving engine for LLMs"
+url: https://github.com/vllm-project/vllm
+source: github
+date: '2026-09-13'
+section: ai
+stars: 91654
+forks: 22146
+stars_per_day: 69.83
+fork_ratio: 0.2416
+industry: ai
+ai_category: inference
+alternative_to:
+  - OpenAI API
+has_readme: true
+repo_created_at: '2023-02-09T11:23:20Z'
+why_it_matters: >-
+  69.8 stars/day since launch; 24.2% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 6
+authors:
+  - vllm-project
+---
+
+A high-throughput and memory-efficient inference and serving engine for LLMs
+
+**91,654** stars · **22,146** forks · **69.8** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: oven-sh/bun
+title: "oven-sh/bun — Incredibly fast JavaScript runtime, bundler, test runner, and package manager –…"
+url: https://github.com/oven-sh/bun
+source: github
+date: '2026-09-13'
+section: devtools
+stars: 95959
+forks: 5038
+stars_per_day: 48.49
+fork_ratio: 0.0525
+industry: devtools
+alternative_to:
+  - Node.js
+has_readme: true
+repo_created_at: '2021-04-14T00:48:17Z'
+why_it_matters: >-
+  48.5 stars/day since launch; 5.3% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 6
+authors:
+  - oven-sh
+---
+
+Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
+**95,959** stars · **5,038** forks · **48.5** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: zed-industries/zed
+title: "zed-industries/zed — Code at the speed of thought – Zed is a high-performance, multiplayer code…"
+url: https://github.com/zed-industries/zed
+source: github
+date: '2026-09-13'
+section: devtools
+stars: 90193
+forks: 10597
+stars_per_day: 44.39
+fork_ratio: 0.1175
+industry: devtools
+alternative_to:
+  - VS Code
+  - Sublime Text
+has_readme: true
+repo_created_at: '2021-02-20T03:01:06Z'
+why_it_matters: >-
+  44.4 stars/day since launch; 11.7% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 5
+authors:
+  - zed-industries
+---
+
+Code at the speed of thought – Zed is a high-performance, multiplayer code editor from the creators of Atom and Tree-sitter.
+
+**90,193** stars · **10,597** forks · **44.4** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: microsoft/playwright
+title: "microsoft/playwright — Playwright is a framework for Web Testing and Automation. It allows…"
+url: https://github.com/microsoft/playwright
+source: github
+date: '2026-09-13'
+section: devtools
+stars: 96070
+forks: 6430
+stars_per_day: 38.52
+fork_ratio: 0.0669
+industry: devtools
+alternative_to:
+  - Selenium
+  - Cypress
+has_readme: true
+repo_created_at: '2019-11-15T18:32:42Z'
+why_it_matters: >-
+  38.5 stars/day since launch; 6.7% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 5
+authors:
+  - microsoft
+---
+
+Playwright is a framework for Web Testing and Automation. It allows testing Chromium, Firefox and WebKit with a single API.
+
+**96,070** stars · **6,430** forks · **38.5** stars/day since launch.
+
+------------------------------------------------------------------------
+
+---
+repo: ghostty-org/ghostty
+title: "ghostty-org/ghostty — 👻 Ghostty is a fast, feature-rich, and cross-platform terminal emulator…"
+url: https://github.com/ghostty-org/ghostty
+source: github
+date: '2026-09-13'
+section: devtools
+stars: 61055
+forks: 3436
+stars_per_day: 37.47
+fork_ratio: 0.0563
+industry: devtools
+alternative_to:
+  - iTerm2
+  - Alacritty
+has_readme: true
+repo_created_at: '2022-03-29T17:38:26Z'
+why_it_matters: >-
+  37.5 stars/day since launch; 5.6% fork-to-star ratio. Editorial note
+  pending.
+interest_score: 5
+authors:
+  - ghostty-org
+---
+
+👻 Ghostty is a fast, feature-rich, and cross-platform terminal emulator that uses platform-native UI and GPU acceleration.
+
+**61,055** stars · **3,436** forks · **37.5** stars/day since launch.

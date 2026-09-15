@@ -1,0 +1,18 @@
+---
+import EditionPage from '../../components/EditionPage.astro';
+import { allEditions, editionProps } from '../../lib/editions';
+
+export async function getStaticPaths() {
+	const editions = await allEditions();
+	return Promise.all(
+		editions.map(async ({ day }) => ({
+			params: { day },
+			props: await editionProps(day),
+		}))
+	);
+}
+
+const props = Astro.props;
+---
+
+<EditionPage {...props} />

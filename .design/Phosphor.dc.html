@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #5ef08a; text-decoration: none; }
+    a:hover { color: #9dfab9; }
+  </style>
+</helmet>
+
+<div style="width: 720px; height: 980px; box-sizing: border-box; background: #0a0e0a; color: #b9c9ba; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; padding: 30px 34px; display: flex; flex-direction: column; gap: 18px;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #4b6b52;">
+      <span>forktimes@wire:~$ ./edition --latest</span>
+      <span>2026-09-14</span>
+    </div>
+    <pre style="margin: 0; color: #5ef08a; font-size: 11px; line-height: 1.15; font-weight: 700; letter-spacing: 0;">┌──────────────────────────────────────────────────────────┐
+│  ▀█▀ █ █ █▀▀   █▀▀ █▀█ █▀█ █ █   ▀█▀ █ █▄ ▄█ █▀▀ █▀▀     │
+│   █  █▀█ █▀▀   █▀  █ █ █▀▄ █▀█    █  █ █ ▀ █ █▀▀ ▀▀█     │
+│   ▀  ▀ ▀ ▀▀▀   ▀   ▀▀▀ ▀ ▀ ▀ ▀    ▀  ▀ ▀   ▀ ▀▀▀ ▀▀▀     │
+└──────────────────────────────────────────────────────────┘</pre>
+    <div style="font-size: 11px; color: #4b6b52; letter-spacing: 0.06em;">// ranked by what is actually moving &nbsp;&middot;&nbsp; edition 014 &nbsp;&middot;&nbsp; 4 entries</div>
+  </div>
+
+  <div style="border: 1px solid #23381f; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #4b6b52;">
+      <span>[01] ai/inference</span>
+      <span style="color: #ffb000;">▲ top mover</span>
+    </div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 18px;">
+      <span style="font-size: 22px; font-weight: 700; color: #e8f2e9;">ollama/ollama</span>
+      <span style="font-size: 26px; font-weight: 700; color: #5ef08a;">153.9<span style="font-size: 11px; font-weight: 400; color: #4b6b52;">/day</span></span>
+    </div>
+    <div style="font-size: 13px; line-height: 1.6; color: #b9c9ba;">Runs open-weight models locally, replacing a hosted API for local and offline work.</div>
+    <div style="display: flex; gap: 8px; font-size: 11px; color: #4b6b52;">
+      <span>stars=180,833</span><span>forks=17,840</span><span>ratio=0.099</span><span>lang=go</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 0;">
+    <div style="display: grid; grid-template-columns: 34px 1fr 76px; gap: 12px; padding: 12px 0; border-bottom: 1px dashed #23381f; align-items: baseline;">
+      <span style="font-size: 11px; color: #4b6b52;">[02]</span>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="font-size: 15px; font-weight: 500; color: #e8f2e9;">astral-sh/uv</span>
+        <span style="font-size: 12.5px; line-height: 1.5;">Rust-based Python packaging; the speed gap over pip is the whole argument.</span>
+        <span style="font-size: 11px; color: #4b6b52;">~&gt; replaces pip, poetry</span>
+      </div>
+      <span style="font-size: 16px; font-weight: 700; color: #5ef08a; text-align: right;">83.3</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 34px 1fr 76px; gap: 12px; padding: 12px 0; border-bottom: 1px dashed #23381f; align-items: baseline;">
+      <span style="font-size: 11px; color: #4b6b52;">[03]</span>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="font-size: 15px; font-weight: 500; color: #e8f2e9;">oven-sh/bun</span>
+        <span style="font-size: 12.5px; line-height: 1.5;">Runtime, bundler, test runner and package manager in one binary.</span>
+        <span style="font-size: 11px; color: #4b6b52;">~&gt; replaces node.js</span>
+      </div>
+      <span style="font-size: 16px; font-weight: 700; color: #5ef08a; text-align: right;">48.5</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 34px 1fr 76px; gap: 12px; padding: 12px 0; align-items: baseline;">
+      <span style="font-size: 11px; color: #4b6b52;">[04]</span>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="font-size: 15px; font-weight: 500; color: #e8f2e9;">ghostty-org/ghostty</span>
+        <span style="font-size: 12.5px; line-height: 1.5;">Platform-native UI with GPU acceleration, rather than a web view in a window.</span>
+        <span style="font-size: 11px; color: #4b6b52;">~&gt; replaces iterm2, alacritty</span>
+      </div>
+      <span style="font-size: 16px; font-weight: 700; color: #5ef08a; text-align: right;">37.5</span>
+    </div>
+  </div>
+
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+    <div style="font-size: 11px; color: #4b6b52;">forktimes@wire:~$ <span style="background: #5ef08a; color: #0a0e0a;">&nbsp;</span></div>
+    <div style="border-top: 1px solid #23381f; padding-top: 10px; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.10em; color: #3d5943; text-transform: uppercase;">
+      <span>F &mdash; Phosphor</span>
+      <span>Terminal-native &middot; ASCII masthead &middot; green</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

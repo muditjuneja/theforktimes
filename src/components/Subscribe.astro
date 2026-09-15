@@ -1,0 +1,88 @@
+---
+// Subscription form.
+//
+// Posts to the Worker's /subscribe endpoint, which forwards to Transmit.
+// Written to work without JavaScript first — a plain form POST lands on the
+// endpoint and gets a JSON reply — then enhanced so the page does not navigate
+// away. Whatever brought a reader to an alternatives page, sending them to a
+// blank success screen loses them.
+
+interface Props {
+	/** Why this particular page is asking. Keep it specific to the surface. */
+	pitch?: string;
+}
+
+const { pitch = 'One issue a week: the open source projects that actually moved, and why it matters.' } = Astro.props;
+---
+
+<aside class="subscribe">
+	<p class="subscribe-pitch">{pitch}</p>
+	<form class="subscribe-form" method="POST" action="/subscribe">
+		<label class="subscribe-label" for="subscribe-email">Email address</label>
+		<div class="subscribe-row">
+			<input
+				class="subscribe-input"
+				id="subscribe-email"
+				type="email"
+				name="email"
+				required
+				autocomplete="email"
+				placeholder="you@example.com"
+				aria-describedby="subscribe-status"
+			/>
+			<button class="subscribe-btn" type="submit">Subscribe</button>
+		</div>
+		<!-- Bots fill every field; people never see this one. -->
+		<div class="subscribe-trap" aria-hidden="true">
+			<label for="subscribe-company">Company</label>
+			<input id="subscribe-company" type="text" name="company" tabindex="-1" autocomplete="off" />
+		</div>
+		<p class="subscribe-status" id="subscribe-status" role="status"></p>
+	</form>
+</aside>
+
+<script>
+	document.querySelectorAll<HTMLFormElement>('.subscribe-form').forEach((form) => {
+		const status = form.querySelector<HTMLElement>('.subscribe-status');
+		const button = form.querySelector<HTMLButtonElement>('.subscribe-btn');
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (!status || !button) return;
+
+			button.disabled = true;
+			status.textContent = 'Adding you to the list…';
+			status.dataset.state = 'pending';
+
+			try {
+				const res = await fetch('/subscribe', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(Object.fromEntries(new FormData(form))),
+				});
+				const body = await res.json().catch(() => ({}));
+
+				if (res.ok && body.ok) {
+					// Confirmation is Transmit's job, so the copy must not promise
+					// the issue itself has arrived.
+					status.textContent = body.already
+						? 'You are already on the list.'
+						: 'Check your inbox to confirm.';
+					status.dataset.state = 'ok';
+					form.reset();
+				} else {
+					status.textContent =
+						body.error === 'invalid_email'
+							? 'That address does not look right.'
+							: 'Something went wrong. Try again in a moment.';
+					status.dataset.state = 'error';
+					button.disabled = false;
+				}
+			} catch {
+				status.textContent = 'Could not reach the server. Try again in a moment.';
+				status.dataset.state = 'error';
+				button.disabled = false;
+			}
+		});
+	});
+</script>

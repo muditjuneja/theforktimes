@@ -1,0 +1,28 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Almanac" },
+    { "id": "page-2", "name": "Directions explored" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",             "page": "page-1", "x": 0,    "y": 0, "w": 860, "h": 1240, "title": "Front page" },
+    { "file": "RepoPage.dc.html",         "page": "page-1", "x": 960,  "y": 0, "w": 860, "h": 1240, "title": "Repo page" },
+    { "file": "AlternativesPage.dc.html", "page": "page-1", "x": 1920, "y": 0, "w": 860, "h": 1240, "title": "Alternatives — one product" },
+    { "file": "Mobile.dc.html",           "page": "page-1", "x": 2880, "y": 0, "w": 390, "h": 844,  "title": "Front page — mobile" },
+
+    { "file": "WireService.dc.html",    "page": "page-2", "x": 0,    "y": 0, "w": 720, "h": 980, "title": "A — Wire Service" },
+    { "file": "BroadsheetNoir.dc.html", "page": "page-2", "x": 820,  "y": 0, "w": 720, "h": 980, "title": "B — Broadsheet Noir" },
+    { "file": "SwissLedger.dc.html",    "page": "page-2", "x": 1640, "y": 0, "w": 720, "h": 980, "title": "C — Swiss Ledger" },
+    { "file": "PulpTabloid.dc.html",    "page": "page-2", "x": 2460, "y": 0, "w": 720, "h": 980, "title": "D — Pulp Tabloid" },
+    { "file": "Phosphor.dc.html",       "page": "page-2", "x": 3280, "y": 0, "w": 720, "h": 980, "title": "F — Phosphor" },
+    { "file": "RisoZine.dc.html",       "page": "page-2", "x": 4100, "y": 0, "w": 720, "h": 980, "title": "G — Riso Zine" }
+  ],
+  "annotations": [
+    { "id": "chosen", "page": "page-1", "x": 0, "y": -230, "w": 860, "text": "E — ALMANAC, built out.\n\nA register of record rather than a daily paper: old-style serif with oldstyle numerals, cool grey-green stock, botanical green, Roman numerals for entry numbers, double rules.\n\nThe form is entry-per-project, which is why it carries across all four screens without strain — an edition, a repo, and the alternatives directory are all registers of the same kind. That was the argument for it and it holds up." },
+    { "id": "note-front", "page": "page-1", "x": 0, "y": 1270, "w": 860, "text": "FRONT PAGE. Masthead, beat rail, one lead entry with its measurements set as a side table, then a two-column register.\n\nThe lead blurb is longer than the rest on purpose — the editorial claim is the product, so the lead earns room to make one. Everything below it is a single specific sentence.\n\nThe headline figure is stars-a-day because that is what the data currently supports; it becomes stars-this-week once two snapshots exist a week apart." },
+    { "id": "note-repo", "page": "page-1", "x": 960, "y": 1270, "w": 860, "text": "REPO PAGE. Stats as a five-column band, then star history, then the editorial note, then the README.\n\nThe star chart is drawn as a hairline engraving with a hatched fill rather than a WebGL plot — it suits the register far better than three.js did, and it removes a 720 KB dependency from the page. Worth revisiting whether the graph needs WebGL at all." },
+    { "id": "note-alts", "page": "page-1", "x": 1920, "y": 1270, "w": 860, "text": "ALTERNATIVES. One product per page, substitutes as numbered entries.\n\n'Not yet measured' is kept visible rather than hidden — those are claims we stand behind but have not put a number to, and saying so is the honest version. 'How this list is made' stays at the foot of every one of these pages." },
+    { "id": "note-mobile", "page": "page-1", "x": 2880, "y": 900, "w": 390, "text": "MOBILE. The register collapses to one column; the beat rail scrolls horizontally. Lead keeps its figure at full size — at this width the number is the thing that survives." },
+    { "id": "not-chosen", "page": "page-2", "x": 0, "y": -170, "w": 860, "text": "The six directions not taken, kept for reference.\n\nA (Wire Service) was the leading candidate before E; C (Swiss Ledger) is the one to revisit if the register ever needs to carry dense tabular views it cannot handle." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}
